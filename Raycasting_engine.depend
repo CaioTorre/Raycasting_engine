@@ -1,0 +1,49 @@
+# depslib dependency file v1.0
+1563423601 source:c:\users\usuario\documents\raycasting_engine\main.cpp
+	<Windows.h>
+	<stdlib.h>
+	<stdio.h>
+	<conio.h>
+	<iostream>
+	<cmath>
+	"vec3_lib.h"
+	"raycast.h"
+
+1563423503 source:c:\users\usuario\documents\raycasting_engine\vec3_lib.cpp
+	"vec3_lib.h"
+	<cmath>
+
+1563423535 c:\users\usuario\documents\raycasting_engine\vec3_lib.h
+
+1563423385 source:c:\users\usuario\documents\raycasting_engine\raycast.cpp
+	"raycast.h"
+
+1563423583 c:\users\usuario\documents\raycasting_engine\raycast.h
+	<Windows.h>
+	<cmath>
+	"vec3_lib.h"
+
+1563423601 source:c:\users\usuario\documents\github\raycasting_engine\main.cpp
+	<Windows.h>
+	<stdlib.h>
+	<stdio.h>
+	<conio.h>
+	<iostream>
+	<cmath>
+	"vec3_lib.h"
+	"raycast.h"
+
+1563423535 c:\users\usuario\documents\github\raycasting_engine\vec3_lib.h
+
+1563423583 c:\users\usuario\documents\github\raycasting_engine\raycast.h
+	<Windows.h>
+	<cmath>
+	"vec3_lib.h"
+
+1563423385 source:c:\users\usuario\documents\github\raycasting_engine\raycast.cpp
+	"raycast.h"
+
+1563423503 source:c:\users\usuario\documents\github\raycasting_engine\vec3_lib.cpp
+	"vec3_lib.h"
+	<cmath>
+
