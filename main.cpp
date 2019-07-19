@@ -33,54 +33,10 @@ int main(int argc, char *args[])
     SDL_SetRenderDrawColor(renderer, 0,0,0,0);
     SDL_RenderClear(renderer);
     cout << "Cleared renderer" << endl;
-    /*
-    window = SDL_CreateWindow( "A E S T H E T I C", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, B_X, B_Y, SDL_WINDOW_SHOWN );
-    if ( window == NULL ) {
-        cout << "Window could not be created, error " << SDL_GetError() << endl;
-        exit(1);
-    }
-    //screenSurface = SDL_GetWindowSurface( window );
-
-    //Fill the surface white
-    SDL_FillRect( screenSurface, NULL, SDL_MapRGB( screenSurface->format, 0xFF, 0xFF, 0xFF ) );
-    cout << "Filled!" << endl;
-
-    //Update the surface
-    SDL_UpdateWindowSurface( window );
-    cout << "Updated!" << endl;
-
-    //Wait two seconds
-    //SDL_Delay( 2000 );
-
-    while (1) {}
-        */
-    /*
-    //Get a console handle
-    HWND myconsole = GetConsoleWindow();
-    //Get a handle to device context
-    HDC mydc = GetDC(myconsole);
-
-    //DOnt ask
-    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-    SMALL_RECT windowSize = {0, 0, (int)(B_X/KX), (int)(B_Y/KY)};
-
-	if(!SetConsoleWindowInfo(hConsole, TRUE, &windowSize))
-	{
-		cout << "SetConsoleWindowInfo failed with error " << GetLastError() << endl;
-		return -1;
-	}
-
-	if(!SetConsoleTitle("A E S T H E T I C"))
-	{
-		cout << "SetConsoleTitle failed with error " << GetLastError() << endl;
-		return -1;
-	}
-    //End dont ask
-    */
 
     // ============================= Start of raycasting =============================
     //Settings
-    double field_of_view = 10;
+    double field_of_view = 30;
     vec3 viewfinder_size = { B_X/10, B_Y/10, 0 };
 
     //Background default color
@@ -130,14 +86,14 @@ int main(int argc, char *args[])
           alpha_rot = atan( viewfinder_size.y / ( 2.0 * field_of_view ) );
           viewfinder_helper = vec3_div_r( vec3_rotate_normal( viewfinder_midpointer, camera.director_y, alpha_rot ), cos(alpha_rot) );
     vec3  viewfinder_step_y = vec3_div_r( vec3_sub( viewfinder_helper, viewfinder_midpointer ), (double)B_Y / 2.0 );
-    vec3  viewfinder_origin = vec3_add(camera.anchor,
+    vec3  viewfinder_origin = //vec3_add(camera.anchor,
                                        vec3_sub(
                                                 viewfinder_midpointer,
                                                 vec3_add(
                                                          vec3_multi_r( viewfinder_step_x, -(double)B_X / 2.0 ),
                                                          vec3_multi_r( viewfinder_step_y, -(double)B_Y / 2.0 )
                                                     )
-                                                )
+                                                //)
                                        );
     printf("Viewfinder origin: (%.2f, %.2f, %.2f) - len = %.2f\n", viewfinder_origin.x, viewfinder_origin.y, viewfinder_origin.z, vec3_len(viewfinder_origin));
 
@@ -148,7 +104,7 @@ int main(int argc, char *args[])
     add_sphere(&drawables_root, (vec3){5,5,5}, 3, 0,255,255, 0.5);
     //add_sphere(&drawables_root, (vec3){10,10,10}, 0.5, 0,0,255, 1);
 
-    FILE *fd = fopen("out_res.txt", "w");
+    //FILE *fd = fopen("out_res.txt", "w");
     intersect_resultset current_closest, current_candidate;
     drawable_obj_llnode *drawables_list_aux = NULL;
     drawable_obj *drawable_ptr = NULL;//, *draw_target = NULL;
@@ -158,44 +114,26 @@ int main(int argc, char *args[])
 //#endif
     int x, y;
     pixel_color current_pixel;
-    //drawable_obj bg_helper;
-    //    bg_helper.texture_color = bg_color;
-    //    bg_helper.texture_alpha = bg_alpha;
     for (x = 0; x < B_X; x++) {
         for (y = 0; y < B_Y; y++) {
-            fprintf(fd, "[%d x %d]\n", x, y);
             //Calculate current viewpoint
             current_viewpoint = vec3_add(viewfinder_origin, vec3_add(vec3_multi_r(viewfinder_step_x, (double)x), vec3_multi_r(viewfinder_step_y, (double)y)));
-            //Find closest object in list
             current_closest = { {INF, INF, INF}, INF };
             drawables_list_aux = drawables_root;
-            fprintf(fd, "\t safe\n");
-            //draw_target = NULL;
             while (drawables_list_aux != NULL) {
                 drawable_ptr = drawables_list_aux->drawable;
                 switch (drawable_ptr->object_type) {
                 case sphere:
-                    fprintf(fd, "\t - sphere \n");
                     current_candidate = chk_intersect_sphere(&(camera.anchor), current_viewpoint, drawable_ptr, &intersections_root);
                     break;
                 default:
                     printf("Something went wrong\n");
                     break;
                 }
-                fprintf(fd,"\t\t ok \n");
-                //usleep(50);
-                //fprintf(fd, "Will add...");
-                //fprintf(fd,"");
-                //if (current_candidate.distance < INF) { add_intersection_tolist(&intersections_root, drawable_ptr, current_candidate); }
-                //fprintf(fd, "added!\n");
-                //if (current_candidate.distance < current_closest.distance) {
-                //    current_closest = current_candidate;
-                //    draw_target = drawable_ptr;
-                //}
                 drawables_list_aux = drawables_list_aux -> next;
             }
             //add_intersection_tolist(&intersections_root, &bg_helper,  { (vec3){INF, INF, INF}, INF });
-            print_intersection_ll(intersections_root, fd);
+            //print_intersection_ll(intersections_root, fd);
             current_pixel = calculate_intersection_results(intersections_root, bg_pixel.r, bg_pixel.g, bg_pixel.b);
             //fprintf(fd, "Hey\n");
             //printf("(%3d,%3d,%3d)\n", current_pixel.r, current_pixel.g, current_pixel.b);
@@ -207,20 +145,11 @@ int main(int argc, char *args[])
             SDL_RenderDrawPoint(renderer, x, y);
             //SDL_RenderPresent(renderer);
 
-            //SetPixel(mydc, x, y, RGB((byte)current_pixel.r, (byte)current_pixel.g, (byte)current_pixel.b));
-/*#ifdef DRAW
-            if (current_closest.distance == INF || draw_target == NULL) {
-                SetPixel(mydc, x, y, bg_color);
-            } else {
-                SetPixel(mydc, x, y, draw_target->texture_color);
-            }
-#endif*/
-
 //#ifdef DEBUG
-            freed_intersect_nodes = free_intersection_linkedlist(&intersections_root);
-            fprintf(fd,"Freed %d nodes\n", freed_intersect_nodes);
+            //freed_intersect_nodes = free_intersection_linkedlist(&intersections_root);
+            //fprintf(fd,"Freed %d nodes\n", freed_intersect_nodes);
 //#else
-            //free_intersection_linkedlist(&intersections_root);
+            free_intersection_linkedlist(&intersections_root);
 //#endif // DEBUG
         }
     }
