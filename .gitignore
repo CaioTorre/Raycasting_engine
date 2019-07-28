@@ -32,9 +32,9 @@
 *.app
 
 # Misc
-.cbp
-.depend
-.layout
+*.cbp
+*.depend
+*.layout
 
 # Folders
 bin
