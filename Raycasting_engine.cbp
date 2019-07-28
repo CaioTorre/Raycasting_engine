@@ -13,9 +13,12 @@
 				<Option compiler="gcc" />
 				<Compiler>
 					<Add option="-g" />
+					<Add directory="C:/Users/Usuario/Documents/mingw_dev_lib/SDL2-2.0.9/i686-w64-mingw32/include/SDL2" />
 				</Compiler>
 				<Linker>
+					<Add option="-lmingw32 -lSDL2main -lSDL2" />
 					<Add library="gdi32" />
+					<Add directory="C:/Users/Usuario/Documents/mingw_dev_lib/SDL2-2.0.9/i686-w64-mingw32/lib" />
 				</Linker>
 			</Target>
 			<Target title="Release">

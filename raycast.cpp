@@ -87,17 +87,28 @@ void add_intersection_tolist(intersects_llnode **root, drawable_obj *obj, inters
         } else {
             //printf("Finding place for %.2f...", intersect.distance);
             intersects_llnode *aux = (*root);
-            intersects_llnode *ant;
-            while (aux != NULL && ((aux -> intersection).distance < intersect.distance)) {
-                //printf("(current is %.2f)...", (aux->intersection).distance);
-                ant = aux;
-                aux = aux->next;
+            while (aux -> next != NULL &&
+                   !(
+                     (intersect.distance < (aux -> next -> intersection).distance)
+                     &&
+                     (intersect.distance >= (aux -> intersection).distance)
+                     )
+                   )
+                aux = aux -> next;
+
+            if (aux -> next == NULL) {
+                aux -> next = (intersects_llnode *)malloc(sizeof(intersects_llnode));
+                aux = aux -> next;
+                aux -> associated_object = obj;
+                aux -> intersection = intersect;
+                aux -> next = NULL;
+            } else {
+                intersects_llnode *aux2 = (intersects_llnode *)malloc(sizeof(intersects_llnode));
+                aux2 -> associated_object = obj;
+                aux2 -> intersection = intersect;
+                aux2 -> next = aux -> next;
+                aux -> next = aux2;
             }
-            //printf("Found place!\n");
-            ant -> next = (intersects_llnode *)malloc(sizeof(intersects_llnode));
-            (ant -> next) -> associated_object = obj;
-            (ant -> next) -> intersection = intersect;
-            (ant -> next) -> next = aux;
         }
     }
     //print_intersection_ll_cout(*root);

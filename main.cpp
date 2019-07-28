@@ -36,7 +36,7 @@ int main(int argc, char *args[])
 
     // ============================= Start of raycasting =============================
     //Settings
-    double field_of_view = 30;
+    double field_of_view = 100;
     vec3 viewfinder_size = { B_X/10, B_Y/10, 0 };
 
     //Background default color
@@ -45,7 +45,7 @@ int main(int argc, char *args[])
 
     //Camera vector, always centered on its "own" X axis
     obj_camera camera = {
-        (vec3){0, 0, 15},  //anchor
+        (vec3){15, 15, 100},  //anchor
         deg_to_rad(00.0),  //roll
         deg_to_rad(90.0),  //pitch
         deg_to_rad(00.0)   //yaw
@@ -77,31 +77,40 @@ int main(int argc, char *args[])
 
     //Anchor the viewfinder via FOV
     vec3 viewfinder_midpointer = vec3_multi_r( camera.director_x, field_of_view );
-    printf("Viewfinder midpointer: (%.2f, %.2f, %.2f) - len = %.2f\n", viewfinder_midpointer.x, viewfinder_midpointer.y, viewfinder_midpointer.z, vec3_len(viewfinder_midpointer));
+    printf("Viewfinder midpointer (from origin): (%.2f, %.2f, %.2f) - len = %.2f\n", viewfinder_midpointer.x, viewfinder_midpointer.y, viewfinder_midpointer.z, vec3_len( viewfinder_midpointer ));
 
     //Calculating viewfinder versors
+    vec3 viewfinder_helper_x = vec3_multi_r( camera.director_y, .5 * (double)viewfinder_size.x );
+    vec3 viewfinder_helper_y = vec3_multi_r( camera.director_z, .5 * (double)viewfinder_size.y );
+    vec3 viewfinder_corner_fromorigin = vec3_add( viewfinder_midpointer, vec3_add( viewfinder_helper_x, viewfinder_helper_y ) );
+    vec3 viewfinder_corner = vec3_add( camera.anchor, viewfinder_corner_fromorigin );
+    printf("Viewfinder corner: (%.2f, %.2f, %.2f) - len = %.2f\n", viewfinder_corner.x, viewfinder_corner.y, viewfinder_corner.z, vec3_len( viewfinder_corner ));
+    vec3 debug_corner = vec3_add( viewfinder_corner, vec3_add( vec3_multi_r( camera.director_y, -1.0 * (double)B_X * viewfinder_size.x / (double)B_X ),vec3_multi_r( camera.director_z, -1.0 * (double)B_Y * viewfinder_size.y / (double)B_Y ) ) );
+    printf("Viewfinder max corner: (%.2f, %.2f, %.2f) - len = %.2f\n", debug_corner.x, debug_corner.y, debug_corner.z, vec3_len( debug_corner ));
+
+    /*
     angle alpha_rot = atan( viewfinder_size.x / ( 2.0 * field_of_view ) );
     vec3  viewfinder_helper = vec3_div_r( vec3_rotate_normal( viewfinder_midpointer, camera.director_z, -alpha_rot  ), cos(alpha_rot) );
     vec3  viewfinder_step_x = vec3_div_r( vec3_sub( viewfinder_helper, viewfinder_midpointer ), (double)B_X / 2.0 );
           alpha_rot = atan( viewfinder_size.y / ( 2.0 * field_of_view ) );
           viewfinder_helper = vec3_div_r( vec3_rotate_normal( viewfinder_midpointer, camera.director_y, alpha_rot ), cos(alpha_rot) );
     vec3  viewfinder_step_y = vec3_div_r( vec3_sub( viewfinder_helper, viewfinder_midpointer ), (double)B_Y / 2.0 );
-    vec3  viewfinder_origin = //vec3_add(camera.anchor,
+    vec3  viewfinder_origin = vec3_add(camera.anchor,
                                        vec3_sub(
                                                 viewfinder_midpointer,
                                                 vec3_add(
                                                          vec3_multi_r( viewfinder_step_x, -(double)B_X / 2.0 ),
                                                          vec3_multi_r( viewfinder_step_y, -(double)B_Y / 2.0 )
                                                     )
-                                                //)
+                                                )
                                        );
     printf("Viewfinder origin: (%.2f, %.2f, %.2f) - len = %.2f\n", viewfinder_origin.x, viewfinder_origin.y, viewfinder_origin.z, vec3_len(viewfinder_origin));
-
+    */
     //Spheres
-    add_sphere(&drawables_root, (vec3){0,0,0}, 7, 255,0,0, 1);
-    add_sphere(&drawables_root, (vec3){10,0,0}, 7, 0,0,255, 0.5);
-    add_sphere(&drawables_root, (vec3){10,10,0}, 7, 255,0,255, 1);
-    add_sphere(&drawables_root, (vec3){5,5,5}, 3, 0,255,255, 0.5);
+    add_sphere(&drawables_root, (vec3){0,0,0}, 20, 255,0,0, 1);
+    add_sphere(&drawables_root, (vec3){30,0,0}, 20, 0,0,255, 0.5);
+    add_sphere(&drawables_root, (vec3){30,30,0}, 20, 255,0,255, 1);
+    add_sphere(&drawables_root, (vec3){15,15,15}, 15, 0,255,255, 0.5);
     //add_sphere(&drawables_root, (vec3){10,10,10}, 0.5, 0,0,255, 1);
 
     //FILE *fd = fopen("out_res.txt", "w");
@@ -116,15 +125,18 @@ int main(int argc, char *args[])
     pixel_color current_pixel;
     for (x = 0; x < B_X; x++) {
         for (y = 0; y < B_Y; y++) {
+            //printf("(%3d,%3d)", x, y);
             //Calculate current viewpoint
-            current_viewpoint = vec3_add(viewfinder_origin, vec3_add(vec3_multi_r(viewfinder_step_x, (double)x), vec3_multi_r(viewfinder_step_y, (double)y)));
+            //current_viewpoint = vec3_add(viewfinder_origin, vec3_add(vec3_multi_r(viewfinder_step_x, (double)x), vec3_multi_r(viewfinder_step_y, (double)y)));
+            current_viewpoint = vec3_add( viewfinder_corner, vec3_add( vec3_multi_r( camera.director_y, -1.0 * (double)x * viewfinder_size.x / (double)B_X ),vec3_multi_r( camera.director_z, -1.0 * (double)y * viewfinder_size.y / (double)B_Y ) ) );
             current_closest = { {INF, INF, INF}, INF };
             drawables_list_aux = drawables_root;
             while (drawables_list_aux != NULL) {
                 drawable_ptr = drawables_list_aux->drawable;
                 switch (drawable_ptr->object_type) {
                 case sphere:
-                    current_candidate = chk_intersect_sphere(&(camera.anchor), current_viewpoint, drawable_ptr, &intersections_root);
+                    //current_candidate =
+                    chk_intersect_sphere(&(camera.anchor), current_viewpoint, drawable_ptr, &intersections_root);
                     break;
                 default:
                     printf("Something went wrong\n");
@@ -143,6 +155,7 @@ int main(int argc, char *args[])
 
             SDL_SetRenderDrawColor(renderer, current_pixel.r, current_pixel.g, current_pixel.b, 255);
             SDL_RenderDrawPoint(renderer, x, y);
+
             //SDL_RenderPresent(renderer);
 
 //#ifdef DEBUG
@@ -152,6 +165,7 @@ int main(int argc, char *args[])
             free_intersection_linkedlist(&intersections_root);
 //#endif // DEBUG
         }
+        //printf("\n");
     }
     SDL_RenderPresent(renderer);
     printf("Done!\n");
