@@ -35,4 +35,7 @@
 .cbp
 .depend
 .layout
-.exe
+
+# Folders
+bin
+obj
