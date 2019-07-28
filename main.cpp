@@ -88,24 +88,6 @@ int main(int argc, char *args[])
     vec3 debug_corner = vec3_add( viewfinder_corner, vec3_add( vec3_multi_r( camera.director_y, -1.0 * (double)B_X * viewfinder_size.x / (double)B_X ),vec3_multi_r( camera.director_z, -1.0 * (double)B_Y * viewfinder_size.y / (double)B_Y ) ) );
     printf("Viewfinder max corner: (%.2f, %.2f, %.2f) - len = %.2f\n", debug_corner.x, debug_corner.y, debug_corner.z, vec3_len( debug_corner ));
 
-    /*
-    angle alpha_rot = atan( viewfinder_size.x / ( 2.0 * field_of_view ) );
-    vec3  viewfinder_helper = vec3_div_r( vec3_rotate_normal( viewfinder_midpointer, camera.director_z, -alpha_rot  ), cos(alpha_rot) );
-    vec3  viewfinder_step_x = vec3_div_r( vec3_sub( viewfinder_helper, viewfinder_midpointer ), (double)B_X / 2.0 );
-          alpha_rot = atan( viewfinder_size.y / ( 2.0 * field_of_view ) );
-          viewfinder_helper = vec3_div_r( vec3_rotate_normal( viewfinder_midpointer, camera.director_y, alpha_rot ), cos(alpha_rot) );
-    vec3  viewfinder_step_y = vec3_div_r( vec3_sub( viewfinder_helper, viewfinder_midpointer ), (double)B_Y / 2.0 );
-    vec3  viewfinder_origin = vec3_add(camera.anchor,
-                                       vec3_sub(
-                                                viewfinder_midpointer,
-                                                vec3_add(
-                                                         vec3_multi_r( viewfinder_step_x, -(double)B_X / 2.0 ),
-                                                         vec3_multi_r( viewfinder_step_y, -(double)B_Y / 2.0 )
-                                                    )
-                                                )
-                                       );
-    printf("Viewfinder origin: (%.2f, %.2f, %.2f) - len = %.2f\n", viewfinder_origin.x, viewfinder_origin.y, viewfinder_origin.z, vec3_len(viewfinder_origin));
-    */
     //Spheres
     add_sphere(&drawables_root, (vec3){0,0,0}, 20, 255,0,0, 1);
     add_sphere(&drawables_root, (vec3){30,0,0}, 20, 0,0,255, 0.5);
