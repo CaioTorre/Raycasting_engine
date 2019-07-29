@@ -18,11 +18,90 @@ void add_drawable_tolist(drawable_obj_llnode **root, drawable_obj *drw_obj) {
 }
 
 void add_sphere(drawable_obj_llnode **root, vec3 center, double radius, byte r, byte g, byte b, double alpha) {
+//void add_sphere(drawable_obj_llnode **root, vec3 center, double radius, pixel_color_rgba rgba) {
+    // Create sphere in memory
     obj_sphere *sphere = (obj_sphere*)malloc(sizeof(obj_sphere));
-    (*sphere) = { center, radius };
+    // Fill details about sphere
+    sphere -> center = center;
+    sphere -> radius = radius;
+    //(*sphere) = { center, radius };
+    // Create drawable abstraction
     drawable_obj *drw_sphere = (drawable_obj*)malloc(sizeof(drawable_obj));
+    // Fill details about drawable
     (*drw_sphere) = { sphere, known_drawable_objs::sphere, (pixel_color){r,g,b}, alpha };
     add_drawable_tolist(root, drw_sphere);
+}
+
+void add_plane_3_points(drawable_obj_llnode **root, vec3 point1, vec3 point2, vec3 point3, byte r, byte g, byte b, double alpha) {
+//void add_plane_3_points(drawable_obj_llnode **root, vec3 point1, vec3 point2, vec3 point3, pixel_color_rgba rgba) {
+    // Create plane in memory
+    obj_plane *plane = (obj_plane*)malloc(sizeof(obj_plane));
+    // Fill details about plane
+    plane -> point = point1;
+    plane -> normal = vec3_cross_product( vec3_sub( point2, point1 ), vec3_sub( point3, point1 ) );
+    // Create drawable abstraction
+    drawable_obj *drw_plane = (drawable_obj*)malloc(sizeof(drawable_obj));
+    // Fill details about drawable
+    (*drw_plane) = { plane, known_drawable_objs::plane, (pixel_color){r,g,b}, alpha };
+    add_drawable_tolist(root, drw_plane);
+}
+
+void add_line_2_points(drawable_obj_llnode **root, vec3 point1, vec3 point2, double radius, byte r, byte g, byte b, double alpha) {
+//void add_line_2_points(drawable_obj_llnode **root, vec3 point1, vec3 point2, double radius, pixel_color_rgba rgba) {
+    // Create line in memory
+    obj_line *line = (obj_line*)malloc(sizeof(obj_line));
+    // Fill details about line
+    line -> point = point1;
+    line -> director = vec3_unit( vec3_sub( point1, point2 ) );
+    //printf("Director: (%.2f, %.2f, %.2f) - len = %.2f\n", line -> director.x, line -> director.y, line -> director.z, vec3_len(line -> director));
+    line -> radius = radius;
+    // Create drawable abstraction
+    drawable_obj *drw_line = (drawable_obj*)malloc(sizeof(drawable_obj));
+    // Fill details about drawable
+    (*drw_line) = { line, known_drawable_objs::line, (pixel_color){r,g,b}, alpha };
+    add_drawable_tolist(root, drw_line);
+}
+
+int load_shapes_from_file(const char *file_location, drawable_obj_llnode **root) {
+    FILE *fd = fopen(file_location, "r");
+    //char temp = (char) 1;
+    int read_objs = 0;
+    enum known_drawable_objs current_obj_type;
+    vec3 point1, point2, point3;
+    double radius;
+    int r, g, b;
+    double a;
+    while (!feof(fd)) {
+        //if (temp != (char) 1) ungetc(temp, fd);
+        fscanf(fd, "%d %d %d %d %lf ", &current_obj_type, &r, &g, &b, &a);
+        //fscanf(fd, "");
+        switch (current_obj_type) {
+        case sphere:
+            fscanf(fd, "%lf %lf %lf %lf ", &(point1.x), &(point1.y), &(point1.z), &radius);
+            add_sphere(root, point1, radius, (byte)r, (byte)g, (byte)b, a);
+            //printf("Read sphere: (%.2f %.2f %.2f) - %.2f - %d %d %d %.2f\n", point1.x, point1.y, point1.z, radius, r, g, b, a);
+            read_objs++;
+            break;
+        case plane:
+            fscanf(fd, "%lf %lf %lf %lf %lf %lf %lf %lf %lf ", &point1.x, &point1.y, &point1.z, &point2.x, &point2.y, &point2.z, &point3.x, &point3.y, &point3.z);
+            add_plane_3_points(root, point1, point2, point3, (byte)r, (byte)g, (byte)b, a);
+            //printf("Read plane\n");
+            read_objs++;
+            break;
+        case line:
+            fscanf(fd, "%lf %lf %lf %lf %lf %lf %lf ", &point1.x, &point1.y, &point1.z, &point2.x, &point2.y, &point2.z, &radius);
+            add_line_2_points(root, point1, point2, radius, (byte)r, (byte)g, (byte)b, a);
+            //printf("Read line\n");
+            read_objs++;
+            break;
+        default:
+            printf("Unknown obj type %d\n", current_obj_type);
+            break;
+        }
+        //temp = fgetc(fd);
+    }
+    fclose(fd);
+    return read_objs;
 }
 
 // Here we go
@@ -59,14 +138,85 @@ intersect_resultset chk_intersect_sphere(vec3 *camera, vec3 viewpoint, drawable_
     double u2 = (-1 * b - sqrt(delta))/(2 * a);
     vec3 c1 = {camera->x + u1*vx_m_cx, camera->y + u1*vy_m_cy, camera->z + u1*vz_m_cz}; // Get both points
     vec3 c2 = {camera->x + u2*vx_m_cx, camera->y + u2*vy_m_cy, camera->z + u2*vz_m_cz};
-    double d1 = vec3_len(vec3_sub(*camera, c1)); // THERE MAY BE AN EASIER WAY
-    double d2 = vec3_len(vec3_sub(*camera, c2)); // IM TIRED
-    temp1 = (intersect_resultset){ c1, d1 };
-    temp2 = (intersect_resultset){ c2, d2 };
+    //double d1 = vec3_len(vec3_sub(*camera, c1)); // THERE MAY BE AN EASIER WAY
+    //double d2 = vec3_len(vec3_sub(*camera, c2)); // IM TIRED
+    //temp1 = (intersect_resultset){ c1, d1 };
+    //temp2 = (intersect_resultset){ c2, d2 };
+    temp1 = (intersect_resultset){ c1, vec3_dist( *camera, c1 ) };
+    temp2 = (intersect_resultset){ c2, vec3_dist( *camera, c2 ) };
     add_intersection_tolist(intersections_root, this_sphere_obj, temp1);
     add_intersection_tolist(intersections_root, this_sphere_obj, temp2);
-    if (d1 < d2) return temp1;
+    if ( vec3_dist( *camera, c1 ) < vec3_dist( *camera, c2 ) ) return temp1;
     return temp2;
+}
+
+intersect_resultset chk_intersect_plane (vec3 *camera, vec3 viewpoint, drawable_obj *this_plane_obj,  intersects_llnode **intersections_root) {
+    obj_plane *this_plane = (obj_plane*)this_plane_obj->object;
+    /*vec3 ray_director = vec3_sub(*camera, viewpoint);
+    double upper = vec3_dot_product( this_plane->normal, vec3_sub( this_plane->point, *camera ) );
+    double lower = -1.0 * vec3_dot_product( ray_director, this_plane->normal );
+    double t = upper / lower;
+    if (t > 0) { //In front of camera
+        vec3 inters = vec3_add(*camera, vec3_multi_r(ray_director, t));
+        intersect_resultset temp = { inters, vec3_dist( *camera, inters ) };
+        add_intersection_tolist( intersections_root, this_plane_obj, temp );
+        return temp;
+    }*/
+
+    vec3 u = vec3_sub(*camera, viewpoint);
+    vec3 w = vec3_sub(this_plane -> point, *camera);
+    double d = vec3_dot_product(this_plane -> normal, u);
+    if (d == 0) return (intersect_resultset){ (vec3){ INF, INF, INF }, INF };
+    double s = -1.0 * vec3_dot_product(this_plane -> normal, w) / d;
+    //if ((s > 0 && s <= 1)) { // Then add to intersection list
+    if (s > 0) {
+        vec3 inters = vec3_add( *camera, vec3_multi_r( u, s ) );
+        //intersect_resultset temp = { inters, vec3_len( vec3_sub( *camera, inters ) ) };
+        intersect_resultset temp = { inters, vec3_dist( *camera, inters ) };
+        add_intersection_tolist( intersections_root, this_plane_obj, temp );
+        return temp;
+    }
+    //printf("Found intersection with s = %.2f\n", s);
+
+    return (intersect_resultset){ (vec3){ INF, INF, INF }, INF };
+}
+
+intersect_resultset chk_intersect_line  (vec3 *camera, vec3 viewpoint, drawable_obj *this_line_obj,   intersects_llnode **intersections_root) {
+    obj_line *this_line = (obj_line*)this_line_obj->object;
+    vec3 ray_director = vec3_sub(*camera, viewpoint);
+    vec3 n_closest = vec3_cross_product(ray_director, this_line->director);
+    if (vec3_len(n_closest) == 0) return (intersect_resultset){ (vec3){ INF, INF, INF }, INF }; //Parallel lines
+    vec3 n2 = vec3_cross_product(this_line -> director, n_closest );
+    vec3 n1 = vec3_cross_product(ray_director, vec3_cross_product(this_line -> director, ray_director));
+    vec3 c1 = vec3_add( *camera, vec3_multi_r( ray_director, vec3_dot_product( vec3_sub( *camera, this_line -> point ), n2 ) / vec3_dot_product( ray_director, n2 ) ) );
+    vec3 c2 = vec3_add( this_line -> point, vec3_multi_r( this_line -> director, vec3_dot_product( vec3_sub( this_line -> point, *camera ), n1 ) / vec3_dot_product( this_line -> director, n1 ) ) );
+    double dist = vec3_dist( c1, c2 );
+    double c_dist = vec3_dist( *camera, c1 );
+    //printf("Dist from line = %.2f, dist from camera = %.2f\n", dist, c_dist);
+    if (dist <= this_line -> radius) {
+        vec3 cam_inters = vec3_sub(*camera, c1);
+        double dotp = vec3_dot_product(cam_inters, ray_director); // Prevent rays from looping back
+        double theta = acos(dotp/(vec3_len(cam_inters) * vec3_len(ray_director)));
+        if (abs(theta) < PI / 2.0) {
+            intersect_resultset temp = { c1, c_dist };
+            add_intersection_tolist( intersections_root, this_line_obj, temp );
+            return temp;
+        }
+    }
+    /*
+    vec3 n_unit = vec3_unit(n_closest);
+    double dist = abs(vec3_dot_product(n_unit, vec3_sub(*camera, this_line -> point)));
+    //vec3 point_diff = vec3_sub(this_line->point, *camera);
+    //double dist = vec3_dot_product(n_closest, point_diff) / vec3_len(n_closest);
+    if (dist <= this_line -> radius) {
+        vec3 n2 = vec3_cross_product(this_line -> director, n_closest);
+        vec3 inters = vec3_add(*camera, vec3_multi_r(ray_director, (vec3_dot_product(vec3_sub(*camera, this_line->point), n2)) / vec3_dot_product(ray_director, n2)));
+        //cout << "Found intersection w line, dist = " << dist << " vs " << this_line -> radius << endl;
+        intersect_resultset temp = { inters, vec3_dist(*camera, inters) };
+        add_intersection_tolist( intersections_root, this_line_obj, temp );
+        return temp;
+    }*/
+    return (intersect_resultset){ (vec3){ INF, INF, INF }, INF };
 }
 
 void add_intersection_tolist(intersects_llnode **root, drawable_obj *obj, intersect_resultset intersect) {
