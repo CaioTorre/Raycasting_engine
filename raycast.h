@@ -13,6 +13,9 @@
 #define INF DBL_MAX
 
 #define DEFAULT_LINE_WIDTH 0.2
+#define TRIANGLE_ANGLE_THRESHOLD 0.01
+#define LINE_RADIUS_THRESHOLD 0.01
+#define MAX_FACES_PERMODEL 500
 
 typedef double angle;
 
@@ -57,7 +60,12 @@ struct obj_line_t {
 };
 typedef struct obj_line_t obj_line;
 
-enum known_drawable_objs { sphere, plane, line };
+struct obj_triangle_t {
+    vec3 vert1, vert2, vert3;
+};
+typedef struct obj_triangle_t obj_triangle;
+
+enum known_drawable_objs { sphere, plane, line, triangle, model };
 
 struct drawable_obj_t {
     void *object;
@@ -72,6 +80,12 @@ struct drawable_obj_llnode_t {
     struct drawable_obj_llnode_t *next;
 };
 typedef struct drawable_obj_llnode_t drawable_obj_llnode;
+
+struct model_vertices_llnode_t {
+    vec3 vert;
+    struct model_vertices_llnode_t *next;
+};
+typedef struct model_vertices_llnode_t model_vertices_llnode;
 
 struct point_lightsource_t {
     vec3 anchor;
@@ -108,11 +122,13 @@ void add_sphere(drawable_obj_llnode **root, vec3 center, double radius, byte r, 
 void add_plane_3_points(drawable_obj_llnode **root, vec3 point1, vec3 point2, vec3 point3, byte r, byte g, byte b, double alpha);
 //void add_line_2_points(drawable_obj_llnode **root, vec3 point1, vec3 point2, double radius, pixel_color_rgba rgba);
 void add_line_2_points(drawable_obj_llnode **root, vec3 point1, vec3 point2, double radius, byte r, byte g, byte b, double alpha);
+void add_triangle(drawable_obj_llnode **root, vec3 point1, vec3 point2, vec3 point3, byte r, byte g, byte b, double alpha);
 
 //Check intersections for each shape
-intersect_resultset chk_intersect_sphere(vec3 *camera, vec3 viewpoint, drawable_obj *this_sphere_obj, intersects_llnode **intersections_root);
-intersect_resultset chk_intersect_plane (vec3 *camera, vec3 viewpoint, drawable_obj *this_plane_obj,  intersects_llnode **intersections_root);
-intersect_resultset chk_intersect_line  (vec3 *camera, vec3 viewpoint, drawable_obj *this_line_obj,   intersects_llnode **intersections_root);
+intersect_resultset chk_intersect_sphere   (vec3 *camera, vec3 viewpoint, drawable_obj *this_sphere_obj, intersects_llnode **intersections_root);
+intersect_resultset chk_intersect_plane    (vec3 *camera, vec3 viewpoint, drawable_obj *this_plane_obj,  intersects_llnode **intersections_root);
+intersect_resultset chk_intersect_line     (vec3 *camera, vec3 viewpoint, drawable_obj *this_line_obj,   intersects_llnode **intersections_root);
+intersect_resultset chk_intersect_triangle (vec3 *camera, vec3 viewpoint, drawable_obj *this_triangle_obj, intersects_llnode **intersections_root);
 
 //Intersection linked list functions
 void add_intersection_tolist(intersects_llnode **root, drawable_obj *obj, intersect_resultset intersect);
@@ -122,5 +138,7 @@ void print_intersection_ll_cout(intersects_llnode *root);
 
 //Calculate resulting pixel color
 pixel_color calculate_intersection_results(intersects_llnode *root, byte bgr, byte bgg, byte bgb);
+
+int free_model_vertices_linkedlist(model_vertices_llnode **root);
 
 #endif // RAYCAST_H_INCLUDED

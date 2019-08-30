@@ -62,6 +62,21 @@ void add_line_2_points(drawable_obj_llnode **root, vec3 point1, vec3 point2, dou
     add_drawable_tolist(root, drw_line);
 }
 
+void add_triangle(drawable_obj_llnode **root, vec3 point1, vec3 point2, vec3 point3, byte r, byte g, byte b, double alpha) {
+//void add_plane_3_points(drawable_obj_llnode **root, vec3 point1, vec3 point2, vec3 point3, pixel_color_rgba rgba) {
+    // Create triangle in memory
+    obj_triangle *triangle = (obj_triangle*)malloc(sizeof(obj_triangle));
+    // Fill details about plane
+    triangle -> vert1 = point1;
+    triangle -> vert2 = point2;
+    triangle -> vert3 = point3;
+    // Create drawable abstraction
+    drawable_obj *drw_triangle = (drawable_obj*)malloc(sizeof(drawable_obj));
+    // Fill details about drawable
+    (*drw_triangle) = { triangle, known_drawable_objs::triangle, (pixel_color){r,g,b}, alpha };
+    add_drawable_tolist(root, drw_triangle);
+}
+
 int load_shapes_from_file(const char *file_location, drawable_obj_llnode **root) {
     FILE *fd = fopen(file_location, "r");
     //char temp = (char) 1;
@@ -71,6 +86,14 @@ int load_shapes_from_file(const char *file_location, drawable_obj_llnode **root)
     double radius;
     int r, g, b;
     double a;
+    char model_directory[30], model_line_mode;
+    model_vertices_llnode *model_root, **model_aux, *model_fetch;
+    model_root = NULL;
+    model_aux = &model_root;
+    FILE *model_file;
+    int model_v1, model_v2, model_v3, model_iterator;
+    int helper;
+    vec3 min_bounding, max_bounding;
     while (!feof(fd)) {
         //if (temp != (char) 1) ungetc(temp, fd);
         fscanf(fd, "%d %d %d %d %lf ", &current_obj_type, &r, &g, &b, &a);
@@ -93,6 +116,70 @@ int load_shapes_from_file(const char *file_location, drawable_obj_llnode **root)
             add_line_2_points(root, point1, point2, radius, (byte)r, (byte)g, (byte)b, a);
             //printf("Read line\n");
             read_objs++;
+            break;
+        case triangle:
+            fscanf(fd, "%lf %lf %lf %lf %lf %lf %lf %lf %lf ", &point1.x, &point1.y, &point1.z, &point2.x, &point2.y, &point2.z, &point3.x, &point3.y, &point3.z);
+            add_triangle(root, point1, point2, point3, (byte)r, (byte)g, (byte)b, a);
+            //printf("Read triangle\n");
+            read_objs++;
+            break;
+        case model:
+            fscanf(fd, "%s", model_directory);
+            printf("Loading model @ %s...\n", model_directory);
+            model_file = fopen(model_directory, "r");
+            if (!model_file) { printf("File not found!\n"); break; }
+            //printf("Opened file!\n");
+            min_bounding = {0.0, 0.0, 0.0};
+            max_bounding = {0.0, 0.0, 0.0};
+            while (!feof(model_file)) {
+                fscanf(model_file, "%c ", &model_line_mode);
+                //printf("C = (%c)", model_line_mode);
+                switch (model_line_mode) {
+                case 'v': // Add vertices to a linked list
+                    //printf("Reading vertice\n");
+                    (*model_aux) = (model_vertices_llnode*)malloc(sizeof(model_vertices_llnode));
+                    fscanf(model_file, "%lf %lf %lf ", &(((*model_aux)->vert).x), &(((*model_aux)->vert).y), &(((*model_aux)->vert).z));
+                    //printf("Vertice = (%.2f %.2f %.2f)\n", (*model_aux)->vert.x, (*model_aux)->vert.y, (*model_aux)->vert.z);
+                    // Keep track of bounding box
+                    if ((*model_aux)->vert.x < min_bounding.x) min_bounding.x = (*model_aux)->vert.x;
+                    if ((*model_aux)->vert.y < min_bounding.y) min_bounding.y = (*model_aux)->vert.y;
+                    if ((*model_aux)->vert.z < min_bounding.z) min_bounding.z = (*model_aux)->vert.z;
+                    if ((*model_aux)->vert.x > max_bounding.x) max_bounding.x = (*model_aux)->vert.x;
+                    if ((*model_aux)->vert.y > max_bounding.y) max_bounding.y = (*model_aux)->vert.y;
+                    if ((*model_aux)->vert.z > max_bounding.z) max_bounding.z = (*model_aux)->vert.z;
+                    (*model_aux)->next = NULL;
+                    model_aux = &((*model_aux)->next);
+                    //fgetc(model_file);
+                    //exit(0);
+                    break;
+                case 'f': // Fetch vertices and create a triangle with them
+                    //printf("Reading face\n");
+                    fscanf(model_file, "%d %d %d ", &model_v1, &model_v2, &model_v3);
+                    if (read_objs >= MAX_FACES_PERMODEL) break;
+                    //printf("Face contains vertices %d, %d & %d\n", model_v1, model_v2, model_v3);
+                    model_fetch = model_root;
+                    for (model_iterator = 1; model_iterator < model_v1; model_iterator++) model_fetch = model_fetch->next;
+                    point1 = model_fetch->vert;
+                    model_fetch = model_root;
+                    for (model_iterator = 1; model_iterator < model_v2; model_iterator++) model_fetch = model_fetch->next;
+                    point2 = model_fetch->vert;
+                    model_fetch = model_root;
+                    for (model_iterator = 1; model_iterator < model_v3; model_iterator++) model_fetch = model_fetch->next;
+                    point3 = model_fetch->vert;
+                    add_triangle(root, point1, point2, point3, (byte)r, (byte)g, (byte)b, a);
+                    read_objs++;
+                    break;
+                default: //Pass (probably a comment or something)
+                    printf("Read line starting with (%c)\n", model_line_mode);
+
+                    while (model_line_mode != '\n') fscanf(model_file, "%c", &model_line_mode);
+                    //ungetc(model_line_mode, model_file);
+                    break;
+                }
+            }
+            printf("Bounding box: (%.2f %.2f %.2f) x (%.2f %.2f %.2f)\n", min_bounding.x, min_bounding.y, min_bounding.z, max_bounding.x, max_bounding.y, max_bounding.z);
+            fclose(model_file);
+            fscanf(fd, "%c ", &model_line_mode); //Getting rid of garbage
             break;
         default:
             printf("Unknown obj type %d\n", current_obj_type);
@@ -138,10 +225,6 @@ intersect_resultset chk_intersect_sphere(vec3 *camera, vec3 viewpoint, drawable_
     double u2 = (-1 * b - sqrt(delta))/(2 * a);
     vec3 c1 = {camera->x + u1*vx_m_cx, camera->y + u1*vy_m_cy, camera->z + u1*vz_m_cz}; // Get both points
     vec3 c2 = {camera->x + u2*vx_m_cx, camera->y + u2*vy_m_cy, camera->z + u2*vz_m_cz};
-    //double d1 = vec3_len(vec3_sub(*camera, c1)); // THERE MAY BE AN EASIER WAY
-    //double d2 = vec3_len(vec3_sub(*camera, c2)); // IM TIRED
-    //temp1 = (intersect_resultset){ c1, d1 };
-    //temp2 = (intersect_resultset){ c2, d2 };
     temp1 = (intersect_resultset){ c1, vec3_dist( *camera, c1 ) };
     temp2 = (intersect_resultset){ c2, vec3_dist( *camera, c2 ) };
     add_intersection_tolist(intersections_root, this_sphere_obj, temp1);
@@ -152,17 +235,6 @@ intersect_resultset chk_intersect_sphere(vec3 *camera, vec3 viewpoint, drawable_
 
 intersect_resultset chk_intersect_plane (vec3 *camera, vec3 viewpoint, drawable_obj *this_plane_obj,  intersects_llnode **intersections_root) {
     obj_plane *this_plane = (obj_plane*)this_plane_obj->object;
-    /*vec3 ray_director = vec3_sub(*camera, viewpoint);
-    double upper = vec3_dot_product( this_plane->normal, vec3_sub( this_plane->point, *camera ) );
-    double lower = -1.0 * vec3_dot_product( ray_director, this_plane->normal );
-    double t = upper / lower;
-    if (t > 0) { //In front of camera
-        vec3 inters = vec3_add(*camera, vec3_multi_r(ray_director, t));
-        intersect_resultset temp = { inters, vec3_dist( *camera, inters ) };
-        add_intersection_tolist( intersections_root, this_plane_obj, temp );
-        return temp;
-    }*/
-
     vec3 u = vec3_sub(*camera, viewpoint);
     vec3 w = vec3_sub(this_plane -> point, *camera);
     double d = vec3_dot_product(this_plane -> normal, u);
@@ -193,29 +265,48 @@ intersect_resultset chk_intersect_line  (vec3 *camera, vec3 viewpoint, drawable_
     double dist = vec3_dist( c1, c2 );
     double c_dist = vec3_dist( *camera, c1 );
     //printf("Dist from line = %.2f, dist from camera = %.2f\n", dist, c_dist);
-    if (dist <= this_line -> radius) {
+    if (dist <= (this_line -> radius + LINE_RADIUS_THRESHOLD)) {
         vec3 cam_inters = vec3_sub(*camera, c1);
         double dotp = vec3_dot_product(cam_inters, ray_director); // Prevent rays from looping back
-        double theta = acos(dotp/(vec3_len(cam_inters) * vec3_len(ray_director)));
-        if (abs(theta) < PI / 2.0) {
+        if (dotp > 0) {
+        //double theta = acos(dotp/(vec3_len(cam_inters) * vec3_len(ray_director)));
+        //if (abs(theta) < PI / 2.0) {
             intersect_resultset temp = { c1, c_dist };
             add_intersection_tolist( intersections_root, this_line_obj, temp );
             return temp;
         }
     }
-    /*
-    vec3 n_unit = vec3_unit(n_closest);
-    double dist = abs(vec3_dot_product(n_unit, vec3_sub(*camera, this_line -> point)));
-    //vec3 point_diff = vec3_sub(this_line->point, *camera);
-    //double dist = vec3_dot_product(n_closest, point_diff) / vec3_len(n_closest);
-    if (dist <= this_line -> radius) {
-        vec3 n2 = vec3_cross_product(this_line -> director, n_closest);
-        vec3 inters = vec3_add(*camera, vec3_multi_r(ray_director, (vec3_dot_product(vec3_sub(*camera, this_line->point), n2)) / vec3_dot_product(ray_director, n2)));
-        //cout << "Found intersection w line, dist = " << dist << " vs " << this_line -> radius << endl;
-        intersect_resultset temp = { inters, vec3_dist(*camera, inters) };
-        add_intersection_tolist( intersections_root, this_line_obj, temp );
-        return temp;
-    }*/
+    return (intersect_resultset){ (vec3){ INF, INF, INF }, INF };
+}
+
+intersect_resultset chk_intersect_triangle (vec3 *camera, vec3 viewpoint, drawable_obj *this_triangle_obj, intersects_llnode **intersections_root) {
+    obj_triangle *this_triangle = (obj_triangle*)this_triangle_obj->object;
+    //Similar to plane intersection
+    vec3 triangle_normal = vec3_cross_product(vec3_sub(this_triangle->vert1, this_triangle->vert2), vec3_sub(this_triangle->vert1, this_triangle->vert3));
+    vec3 raycast_director = vec3_sub(*camera, viewpoint);
+    vec3 w = vec3_sub(this_triangle->vert1, *camera);
+    double d = vec3_dot_product(triangle_normal, raycast_director);
+    if (d == 0) return (intersect_resultset){ (vec3){ INF, INF, INF }, INF };
+    double s = -1.0 * vec3_dot_product(triangle_normal, w) / d;
+    if (s > 0) {
+        vec3 inters = vec3_add( *camera, vec3_multi_r( raycast_director, s ) );
+        // Now check if inters is inside the triangle
+        vec3 v1 = vec3_sub(inters, this_triangle->vert1);
+        vec3 v2 = vec3_sub(inters, this_triangle->vert2);
+        vec3 v3 = vec3_sub(inters, this_triangle->vert3);
+        double l1 = vec3_len(v1);
+        double l2 = vec3_len(v2);
+        double l3 = vec3_len(v3);
+        double theta12 = acos( vec3_dot_product(v1, v2) / (l1 * l2));
+        double theta13 = acos( vec3_dot_product(v1, v3) / (l1 * l3));
+        double theta23 = acos( vec3_dot_product(v2, v3) / (l2 * l3));
+        if ( abs(theta12 + theta13 + theta23 - (2.0 * PI)) <= TRIANGLE_ANGLE_THRESHOLD ) {
+        //intersect_resultset temp = { inters, vec3_len( vec3_sub( *camera, inters ) ) };
+            intersect_resultset temp = { inters, vec3_dist( *camera, inters ) };
+            add_intersection_tolist( intersections_root, this_triangle_obj, temp );
+            return temp;
+        } // Else it misses (outside of triangle)
+    }
     return (intersect_resultset){ (vec3){ INF, INF, INF }, INF };
 }
 
@@ -270,6 +361,20 @@ int free_intersection_linkedlist(intersects_llnode **root) {
     free(*root);
     return v + 1;*/
     intersects_llnode *aux1, *aux2;
+    aux1 = *root;
+    int res = 0;
+    while(aux1 != NULL) {
+        aux2 = aux1;
+        aux1 = aux1->next;
+        free(aux2);
+        res++;
+    }
+    (*root) = NULL;
+    return res;
+}
+
+int free_model_vertices_linkedlist(model_vertices_llnode **root) {
+    model_vertices_llnode *aux1, *aux2;
     aux1 = *root;
     int res = 0;
     while(aux1 != NULL) {
