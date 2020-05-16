@@ -125,7 +125,7 @@ int load_shapes_from_file(const char *file_location, drawable_obj_llnode **root)
             read_objs++;
             break;
         case model:
-            fscanf(fd, "%s", model_directory);
+            fscanf(fd, "%s ", model_directory);
             printf("Loading model @ %s...\n", model_directory);
             model_file = fopen(model_directory, "r");
             if (!model_file) { printf("File not found!\n"); break; }
