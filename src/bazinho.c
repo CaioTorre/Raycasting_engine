@@ -1,7 +1,5 @@
 #include "bazinho.h"
 
-//Versao de prova
-
 //====================================== FORK ======================================
 pid_t *cria_n_forks(int n_forks, void(*func_filho)()) {
     pid_t *lista_pids = (pid_t *) malloc(n_forks * sizeof(pid_t));

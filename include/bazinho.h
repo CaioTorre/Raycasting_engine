@@ -1,19 +1,17 @@
 #include <stdlib.h>
-#include <sys/time.h>		/* for gettimeofday() */
-#include <unistd.h>		/* for gettimeofday() and fork() */
-#include <stdio.h>		/* for printf() */
-#include <sys/types.h>		/* for wait() */
-//#include <sys/wait.h>		/* for wait() */
-//#include <wait.h>		/* for wait() */
-//#include <sys/msg.h>		/* for msgget(), msgctl()*/
-#include <errno.h>              /* errno and error codes */
-#include <signal.h>             /* for kill(), sigsuspend(), others */
-//#include <sys/ipc.h>            /* for all IPC function calls */
-//#include <sys/shm.h>            /* for shmget(), shmat(), shmctl() */
-//#include <sys/sem.h>            /* for semget(), semop(), semctl() */
-#include <pthread.h>		/* para poder manipular threads */
-
-//Versao de prova
+#include <sys/time.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <wait.h>
+#include <sys/msg.h>
+#include <errno.h>
+#include <signal.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <sys/sem.h>
+#include <pthread.h>
 
 //Enums
 enum mutex_ops_e {Trava = -1, Libera = 1};

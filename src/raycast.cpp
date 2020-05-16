@@ -17,7 +17,7 @@ void add_drawable_tolist(drawable_obj_llnode **root, drawable_obj *drw_obj) {
     }
 }
 
-void add_sphere(drawable_obj_llnode **root, vec3 center, double radius, byte r, byte g, byte b, double alpha) {
+void add_sphere(drawable_obj_llnode **root, vec3 center, double radius, uint8_t r, uint8_t g, uint8_t b, double alpha) {
 //void add_sphere(drawable_obj_llnode **root, vec3 center, double radius, pixel_color_rgba rgba) {
     // Create sphere in memory
     obj_sphere *sphere = (obj_sphere*)malloc(sizeof(obj_sphere));
@@ -32,7 +32,7 @@ void add_sphere(drawable_obj_llnode **root, vec3 center, double radius, byte r, 
     add_drawable_tolist(root, drw_sphere);
 }
 
-void add_plane_3_points(drawable_obj_llnode **root, vec3 point1, vec3 point2, vec3 point3, byte r, byte g, byte b, double alpha) {
+void add_plane_3_points(drawable_obj_llnode **root, vec3 point1, vec3 point2, vec3 point3, uint8_t r, uint8_t g, uint8_t b, double alpha) {
 //void add_plane_3_points(drawable_obj_llnode **root, vec3 point1, vec3 point2, vec3 point3, pixel_color_rgba rgba) {
     // Create plane in memory
     obj_plane *plane = (obj_plane*)malloc(sizeof(obj_plane));
@@ -46,7 +46,7 @@ void add_plane_3_points(drawable_obj_llnode **root, vec3 point1, vec3 point2, ve
     add_drawable_tolist(root, drw_plane);
 }
 
-void add_line_2_points(drawable_obj_llnode **root, vec3 point1, vec3 point2, double radius, byte r, byte g, byte b, double alpha) {
+void add_line_2_points(drawable_obj_llnode **root, vec3 point1, vec3 point2, double radius, uint8_t r, uint8_t g, uint8_t b, double alpha) {
 //void add_line_2_points(drawable_obj_llnode **root, vec3 point1, vec3 point2, double radius, pixel_color_rgba rgba) {
     // Create line in memory
     obj_line *line = (obj_line*)malloc(sizeof(obj_line));
@@ -62,7 +62,7 @@ void add_line_2_points(drawable_obj_llnode **root, vec3 point1, vec3 point2, dou
     add_drawable_tolist(root, drw_line);
 }
 
-void add_triangle(drawable_obj_llnode **root, vec3 point1, vec3 point2, vec3 point3, byte r, byte g, byte b, double alpha) {
+void add_triangle(drawable_obj_llnode **root, vec3 point1, vec3 point2, vec3 point3, uint8_t r, uint8_t g, uint8_t b, double alpha) {
 //void add_plane_3_points(drawable_obj_llnode **root, vec3 point1, vec3 point2, vec3 point3, pixel_color_rgba rgba) {
     // Create triangle in memory
     obj_triangle *triangle = (obj_triangle*)malloc(sizeof(obj_triangle));
@@ -96,31 +96,31 @@ int load_shapes_from_file(const char *file_location, drawable_obj_llnode **root)
     vec3 min_bounding, max_bounding;
     while (!feof(fd)) {
         //if (temp != (char) 1) ungetc(temp, fd);
-        fscanf(fd, "%d %d %d %d %lf ", &current_obj_type, &r, &g, &b, &a);
+        fscanf(fd, "%d %d %d %d %lf ", (int*)&current_obj_type, &r, &g, &b, &a);
         //fscanf(fd, "");
         switch (current_obj_type) {
         case sphere:
             fscanf(fd, "%lf %lf %lf %lf ", &(point1.x), &(point1.y), &(point1.z), &radius);
-            add_sphere(root, point1, radius, (byte)r, (byte)g, (byte)b, a);
+            add_sphere(root, point1, radius, (uint8_t)r, (uint8_t)g, (uint8_t)b, a);
             //printf("Read sphere: (%.2f %.2f %.2f) - %.2f - %d %d %d %.2f\n", point1.x, point1.y, point1.z, radius, r, g, b, a);
             read_objs++;
             break;
         case plane:
             fscanf(fd, "%lf %lf %lf %lf %lf %lf %lf %lf %lf ", &point1.x, &point1.y, &point1.z, &point2.x, &point2.y, &point2.z, &point3.x, &point3.y, &point3.z);
-            add_plane_3_points(root, point1, point2, point3, (byte)r, (byte)g, (byte)b, a);
-            //printf("Read plane\n");
+            add_plane_3_points(root, point1, point2, point3, (uint8_t)r, (uint8_t)g, (uint8_t)b, a);
+            printf("Read plane\n");
             read_objs++;
             break;
         case line:
             fscanf(fd, "%lf %lf %lf %lf %lf %lf %lf ", &point1.x, &point1.y, &point1.z, &point2.x, &point2.y, &point2.z, &radius);
-            add_line_2_points(root, point1, point2, radius, (byte)r, (byte)g, (byte)b, a);
+            add_line_2_points(root, point1, point2, radius, (uint8_t)r, (uint8_t)g, (uint8_t)b, a);
             //printf("Read line\n");
             read_objs++;
             break;
         case triangle:
             fscanf(fd, "%lf %lf %lf %lf %lf %lf %lf %lf %lf ", &point1.x, &point1.y, &point1.z, &point2.x, &point2.y, &point2.z, &point3.x, &point3.y, &point3.z);
-            add_triangle(root, point1, point2, point3, (byte)r, (byte)g, (byte)b, a);
-            //printf("Read triangle\n");
+            add_triangle(root, point1, point2, point3, (uint8_t)r, (uint8_t)g, (uint8_t)b, a);
+            printf("Read triangle\n");
             read_objs++;
             break;
         case model:
@@ -139,6 +139,9 @@ int load_shapes_from_file(const char *file_location, drawable_obj_llnode **root)
                     //printf("Reading vertice\n");
                     (*model_aux) = (model_vertices_llnode*)malloc(sizeof(model_vertices_llnode));
                     fscanf(model_file, "%lf %lf %lf ", &(((*model_aux)->vert).x), &(((*model_aux)->vert).y), &(((*model_aux)->vert).z));
+                    ((*model_aux)->vert).x *= 30;
+                    ((*model_aux)->vert).y *= 30;
+                    ((*model_aux)->vert).z *= 30;
                     //printf("Vertice = (%.2f %.2f %.2f)\n", (*model_aux)->vert.x, (*model_aux)->vert.y, (*model_aux)->vert.z);
                     // Keep track of bounding box
                     if ((*model_aux)->vert.x < min_bounding.x) min_bounding.x = (*model_aux)->vert.x;
@@ -166,7 +169,7 @@ int load_shapes_from_file(const char *file_location, drawable_obj_llnode **root)
                     model_fetch = model_root;
                     for (model_iterator = 1; model_iterator < model_v3; model_iterator++) model_fetch = model_fetch->next;
                     point3 = model_fetch->vert;
-                    add_triangle(root, point1, point2, point3, (byte)r, (byte)g, (byte)b, a);
+                    add_triangle(root, point1, point2, point3, (uint8_t)r, (uint8_t)g, (uint8_t)b, a);
                     read_objs++;
                     break;
                 default: //Pass (probably a comment or something)
@@ -387,7 +390,7 @@ int free_model_vertices_linkedlist(model_vertices_llnode **root) {
     return res;
 }
 
-pixel_color calculate_intersection_results(intersects_llnode *root, byte bgr, byte bgg, byte bgb) {
+pixel_color calculate_intersection_results(intersects_llnode *root, uint8_t bgr, uint8_t bgg, uint8_t bgb) {
     if (root == NULL) {
             //printf("Found end of list, returning...\n");
             return (pixel_color){bgr, bgg, bgb};
@@ -421,4 +424,3 @@ void print_intersection_ll_cout(intersects_llnode *root) {
     printf("(%2d,%2d,%2d)->", root->associated_object->texture_color.r, root->associated_object->texture_color.g, root->associated_object->texture_color.b);
     print_intersection_ll_cout(root->next);
 }
-

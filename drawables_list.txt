@@ -1,1 +1,0 @@
-4 255 255 0 1.0 objects\utah-teapot.obj

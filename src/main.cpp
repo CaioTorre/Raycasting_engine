@@ -1,20 +1,16 @@
-#include <Windows.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <conio.h>
 #include <iostream>
 #include <cmath>
 #include <unistd.h>
-
-//#include <thread>
-
-#include <SDL.h>
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
+#include <GL/glut.h>
 
 #include "vec3_lib.h"
 #include "raycast.h"
-//#include "bazinho.h"
-
-using namespace std;
+#include "bazinho.h"
 
 #define B_X 640
 #define B_Y 480
@@ -29,30 +25,123 @@ using namespace std;
 
 obj_camera camera;
 drawable_obj_llnode *drawables_root = NULL;
-SDL_Renderer *renderer;
 pixel_color bg_pixel = {0,0,0};
 
-//struct xy_t {
-//    int x, int y;
-//};
+GLFWwindow* window;
+
+GLubyte window_bitmap[B_Y][B_X][3] = {0x00};
 
 void trace_for_pixel(int x, int y);
 
+void init(void)
+{  
+    glClearColor (0.0, 0.0, 0.0, 0.0);
+    glShadeModel(GL_FLAT);
+    // int x, y;
+    // for (x = 0; x < B_X/2; x++) {
+    //     for (y = 0; y < B_Y; y++) {
+    //         window_bitmap[y][x][0] = 0xff;
+    //         window_bitmap[y][x+B_X/2][2] = 0xff;
+    //     }
+    // }
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+}
+
+void display(void)
+{
+   glClear(GL_COLOR_BUFFER_BIT);
+   glRasterPos2i(-1, -1);
+   glDrawPixels(B_X, B_Y, GL_RGB,
+                GL_UNSIGNED_BYTE, window_bitmap);
+   glFlush();
+}
+
+void *thread_loop(void* arg) {
+    glutDisplayFunc(display);
+    glutMainLoop();
+}
+
+pthread_t windowThread;
+
 int main(int argc, char *args[])
 {
-    //cria_semaforo(SEM_KEY);
+    printf("Starting...\n");
 
-    SDL_Window *window = NULL;
-    //SDL_Surface *screenSurface = NULL;
-    SDL_Event event;
-    if ( SDL_Init( SDL_INIT_VIDEO ) < 0 ) {
-        cout << "SDL could not start, error " << SDL_GetError() << endl;
-        exit(1);
-    }
-    SDL_CreateWindowAndRenderer(B_X, B_Y, 0, &window, &renderer);
-    SDL_SetRenderDrawColor(renderer, 0,0,0,0);
-    SDL_RenderClear(renderer);
-    cout << "Cleared renderer" << endl;
+    glutInit(&argc, args);
+    glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
+    glutInitWindowSize(B_X, B_Y);
+    glutInitWindowPosition(0, 0);
+    glutCreateWindow("A E S T H E T I C");
+    init();
+    // glutReshapeFunc(reshape);
+    // glutKeyboardFunc(keyboard);
+    
+    printf("Doing...\n");
+
+    // // Initialise GLFW
+    // glewExperimental = true; // Needed for core profile
+    // if( !glfwInit() )
+    // {
+    //     fprintf( stderr, "Failed to initialize GLFW\n" );
+    //     return -1;
+    // }
+
+    // // Create window
+    // glfwWindowHint(GLFW_SAMPLES, 4); // 4x antialiasing
+    // glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3); // We want OpenGL 3.3
+    // glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    // glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // To make MacOS happy; should not be needed
+    // glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // We don't want the old OpenGL 
+
+    // // Open a window and create its OpenGL context
+    // window = glfwCreateWindow( B_X, B_Y, "A E S T H E T I C", NULL, NULL);
+    // if( window == NULL ){
+    //     fprintf( stderr, "Failed to open GLFW window.\n" );
+    //     glfwTerminate();
+    //     return -1;
+    // }
+    // glfwMakeContextCurrent(window); // Initialize GLEW
+    // glfwSwapInterval(1);
+    // // glewExperimental=true; // Needed in core profile
+    // // if (glewInit() != GLEW_OK) {
+    // //     fprintf(stderr, "Failed to initialize GLEW\n");
+    // //     return -1;
+    // // }
+    // int width, height;
+    // glfwGetFramebufferSize(window, &width, &height);
+
+    // printf("Framebuffer: %d x %d\n", width, height);
+
+    
+
+    // glViewport(0, 0, width, height);
+	
+	// glMatrixMode(GL_PROJECTION);
+	// glLoadIdentity();
+	// // glOrtho(left, right, bottom, top, near, far);
+	// glMatrixMode(GL_MODELVIEW);
+	// glLoadIdentity();
+
+    // glClearColor(1.0, 1.0, 1.0, 0.0);
+    // glShadeModel(GL_FLAT);
+    // glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+    // while (!glfwWindowShouldClose(window)) {
+    //     glClear(GL_COLOR_BUFFER_BIT);
+    //     glRasterPos2i(0, 0);
+    //     glDrawBuffer(GL_FRONT);
+    //     glDrawPixels(
+    //         B_X, 
+    //         B_Y, 
+    //         GL_RGB,
+    //         GL_UNSIGNED_BYTE,
+    //         window_bitmap
+    //     );
+    //     glFlush();
+    // }
+
+    // printf("Done!\n");
+    // scanf("%d", &x);
 
     // ============================= Start of raycasting =============================
     //Settings
@@ -65,7 +154,7 @@ int main(int argc, char *args[])
 
     //Camera vector, always centered on its "own" X axis
     camera = {
-        (vec3){-300, 0, 100},  //anchor
+        (vec3){-300, 0, 10},  //anchor
         deg_to_rad(00.0),  //roll
         deg_to_rad(00.0),  //pitch
         deg_to_rad(00.0)   //yaw
@@ -75,7 +164,7 @@ int main(int argc, char *args[])
     //Drawable object linked list
     intersects_llnode *intersections_root = NULL;
 
-    int objs = load_shapes_from_file("drawables_list.txt", &drawables_root);
+    int objs = load_shapes_from_file("scenes/drawables_list.txt", &drawables_root);
     printf("Loaded %d objects\n", objs);
 
     //add_triangle(&drawables_root, (vec3){0,-20,0}, (vec3){0,20,0}, (vec3){0,0,50}, 255, 204, 255,1);
@@ -176,8 +265,11 @@ int main(int argc, char *args[])
 
             //if (current_pixel.r != bg_pixel.r) { printf("Found differently colored pixel!\n"); }
 
-            SDL_SetRenderDrawColor(renderer, current_pixel.r, current_pixel.g, current_pixel.b, 255);
-            SDL_RenderDrawPoint(renderer, x, y);
+            window_bitmap[B_Y-y][x][0] = current_pixel.r;
+            window_bitmap[B_Y-y][x][1] = current_pixel.g;
+            window_bitmap[B_Y-y][x][2] = current_pixel.b;
+            // SDL_SetRenderDrawColor(renderer, current_pixel.r, current_pixel.g, current_pixel.b, 255);
+            // SDL_RenderDrawPoint(renderer, x, y);
 
             //SDL_RenderPresent(renderer);
 
@@ -186,6 +278,10 @@ int main(int argc, char *args[])
 #endif
         }
     }
+    printf("Done!\n");
+    pthread_create(&windowThread, NULL, thread_loop, (void*)NULL);
+
+    scanf("%d", &x);
 
 #ifdef USE_THREADS
     for (x = 0; x < B_X; x++) {
@@ -195,24 +291,24 @@ int main(int argc, char *args[])
     }
 #endif // USE_THREADS
 
-    SDL_RenderPresent(renderer);
+    // SDL_RenderPresent(renderer);
     printf("Done!\n");
     //} while (command != 'x');
 
-    while(1) {
-        if ( SDL_PollEvent(&event) && event.type == SDL_QUIT ) {
-            SDL_DestroyRenderer( renderer );
-            SDL_DestroyWindow( window );
-            SDL_Quit();
-            exit(0);
-            }//break;
-    }
+    // while(1) {
+    //     if ( SDL_PollEvent(&event) && event.type == SDL_QUIT ) {
+    //         SDL_DestroyRenderer( renderer );
+    //         SDL_DestroyWindow( window );
+    //         SDL_Quit();
+    //         exit(0);
+    //         }//break;
+    // }
 
-    SDL_DestroyRenderer( renderer );
-    SDL_DestroyWindow( window );
+    // SDL_DestroyRenderer( renderer );
+    // SDL_DestroyWindow( window );
 
     //Quit SDL subsystems
-    SDL_Quit();
+    // SDL_Quit();
 
 
     //ReleaseDC(myconsole, mydc);
@@ -252,8 +348,8 @@ void trace_for_pixel(struct xy_t *myarg) {
     }
     current_pixel = calculate_intersection_results(intersections_root, bg_pixel.r, bg_pixel.g, bg_pixel.b);
 
-    SDL_SetRenderDrawColor(renderer, current_pixel.r, current_pixel.g, current_pixel.b, 255);
-    SDL_RenderDrawPoint(renderer, x, y);
+    // SDL_SetRenderDrawColor(renderer, current_pixel.r, current_pixel.g, current_pixel.b, 255);
+    // SDL_RenderDrawPoint(renderer, x, y);
 
     free_intersection_linkedlist(&intersections_root);
 }

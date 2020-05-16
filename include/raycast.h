@@ -1,8 +1,9 @@
-#include <Windows.h>
 #include <cmath>
 #include <stdio.h>
 #include "vec3_lib.h"
 #include <float.h>
+#include <stdint.h>
+
 #ifndef RAYCAST_H_INCLUDED
 #define RAYCAST_H_INCLUDED
 
@@ -15,7 +16,7 @@
 #define DEFAULT_LINE_WIDTH 0.2
 #define TRIANGLE_ANGLE_THRESHOLD 0.01
 #define LINE_RADIUS_THRESHOLD 0.01
-#define MAX_FACES_PERMODEL 500
+#define MAX_FACES_PERMODEL 5000
 
 typedef double angle;
 
@@ -27,14 +28,18 @@ struct obj_camera_t {
 typedef struct obj_camera_t obj_camera;
 
 struct pixel_color_t {
-    byte r, g, b;
-};
+    uint8_t r;
+    uint8_t g;
+    uint8_t b;
+} __attribute__ ((packed));
 typedef struct pixel_color_t pixel_color;
 
 struct pixel_color_rgba_t {
-    byte r, g, b;
+    uint8_t r;
+    uint8_t g;
+    uint8_t b;
     double alpha;
-};
+} __attribute__ ((packed));
 typedef struct pixel_color_rgba_t pixel_color_rgba;
 
 struct intersect_resultset_t {
@@ -117,12 +122,12 @@ int load_shapes_from_file(const char *file_location, drawable_obj_llnode **root)
 //Add basic shapes
 void add_drawable_tolist(drawable_obj_llnode **root, drawable_obj *drw_obj);
 //void add_sphere(drawable_obj_llnode **root, vec3 center, double radius, pixel_color_rgba rgba;
-void add_sphere(drawable_obj_llnode **root, vec3 center, double radius, byte r, byte g, byte b, double alpha);
+void add_sphere(drawable_obj_llnode **root, vec3 center, double radius, uint8_t r, uint8_t g, uint8_t b, double alpha);
 //void add_plane_3_points(drawable_obj_llnode **root, vec3 point1, vec3 point2, vec3 point3, pixel_color_rgba rgba);
-void add_plane_3_points(drawable_obj_llnode **root, vec3 point1, vec3 point2, vec3 point3, byte r, byte g, byte b, double alpha);
+void add_plane_3_points(drawable_obj_llnode **root, vec3 point1, vec3 point2, vec3 point3, uint8_t r, uint8_t g, uint8_t b, double alpha);
 //void add_line_2_points(drawable_obj_llnode **root, vec3 point1, vec3 point2, double radius, pixel_color_rgba rgba);
-void add_line_2_points(drawable_obj_llnode **root, vec3 point1, vec3 point2, double radius, byte r, byte g, byte b, double alpha);
-void add_triangle(drawable_obj_llnode **root, vec3 point1, vec3 point2, vec3 point3, byte r, byte g, byte b, double alpha);
+void add_line_2_points(drawable_obj_llnode **root, vec3 point1, vec3 point2, double radius, uint8_t r, uint8_t g, uint8_t b, double alpha);
+void add_triangle(drawable_obj_llnode **root, vec3 point1, vec3 point2, vec3 point3, uint8_t r, uint8_t g, uint8_t b, double alpha);
 
 //Check intersections for each shape
 intersect_resultset chk_intersect_sphere   (vec3 *camera, vec3 viewpoint, drawable_obj *this_sphere_obj, intersects_llnode **intersections_root);
@@ -137,7 +142,7 @@ void print_intersection_ll(intersects_llnode *root, FILE *desc);
 void print_intersection_ll_cout(intersects_llnode *root);
 
 //Calculate resulting pixel color
-pixel_color calculate_intersection_results(intersects_llnode *root, byte bgr, byte bgg, byte bgb);
+pixel_color calculate_intersection_results(intersects_llnode *root, uint8_t bgr, uint8_t bgg, uint8_t bgb);
 
 int free_model_vertices_linkedlist(model_vertices_llnode **root);
 
