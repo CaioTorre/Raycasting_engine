@@ -16,7 +16,7 @@ pid_t *cria_n_forks(int n_forks, void(*func_filho)()) {
     return lista_pids;
 }
 
-pid_t *cria_n_forks_args(int n_forks, void(*func_filho)(), void*(*cria_args)(int), size_t tamanho_arg) {
+pid_t *cria_n_forks_args(int n_forks, void(*func_filho)(void *), void*(*cria_args)(int), size_t tamanho_arg) {
     pid_t *lista_pids = (pid_t *) malloc(n_forks * sizeof(pid_t));
     char *lista_args = (char*)(cria_args)(n_forks);
     int i;
@@ -32,7 +32,7 @@ pid_t *cria_n_forks_args(int n_forks, void(*func_filho)(), void*(*cria_args)(int
     return lista_pids;
 }
 
-pid_t *cria_n_forks_arglist(int n_forks, void(*func_filho)(), void* args, size_t tamanho_arg) {
+pid_t *cria_n_forks_arglist(int n_forks, void(*func_filho)(void *), void* args, size_t tamanho_arg) {
     pid_t *lista_pids = (pid_t *) malloc(n_forks * sizeof(pid_t));
     char *lista_args = (char*) args;
     int i;
@@ -261,7 +261,7 @@ int opera_semaforo_nowait(key_t chave, int valor) {
 }
 
 //===================================== THREAD =====================================
-pthread_t *cria_n_threads_args(int n_threads, void(*func_thread)(void *), void*(*cria_args)(int), size_t tamanho_arg) {
+pthread_t *cria_n_threads_args(int n_threads, void*(*func_thread)(void *), void*(*cria_args)(int), size_t tamanho_arg) {
     int i, status_thread_atual;
     char *lista_args = (char*)(cria_args)(n_threads);
     pthread_t *lista_threads = (pthread_t *) malloc(n_threads * sizeof(pthread_t));
@@ -271,7 +271,7 @@ pthread_t *cria_n_threads_args(int n_threads, void(*func_thread)(void *), void*(
         exit(-1);
     }
     for (i = 0; i < n_threads; i++) {
-        status_thread_atual = pthread_create(&lista_threads[i], NULL, (void*)func_thread, (void*)(&(lista_args[i * tamanho_arg])));
+        status_thread_atual = pthread_create(&lista_threads[i], NULL, func_thread, (void*)(&(lista_args[i * tamanho_arg])));
         if (status_thread_atual) {
             perror("pthread_create");
             fprintf(stderr, "Chamada pthread_create() falhou, impossivel criar um thread.\n");
@@ -281,7 +281,7 @@ pthread_t *cria_n_threads_args(int n_threads, void(*func_thread)(void *), void*(
     return lista_threads;
 }
 
-pthread_t *cria_n_threads_arglist(int n_threads, void(*func_thread)(void *), void* args, size_t tamanho_arg) {
+pthread_t *cria_n_threads_arglist(int n_threads, void*(*func_thread)(void *), void* args, size_t tamanho_arg) {
     int i, status_thread_atual;
     pthread_t *lista_threads = (pthread_t *) malloc(n_threads * sizeof(pthread_t));
     if (lista_threads == NULL) {
@@ -291,7 +291,7 @@ pthread_t *cria_n_threads_arglist(int n_threads, void(*func_thread)(void *), voi
     }
     char *lista_args = (char*) args;
     for (i = 0; i < n_threads; i++) {
-        status_thread_atual = pthread_create(&lista_threads[i], NULL, (void*)func_thread, (void*)(&lista_args[i * tamanho_arg]));
+        status_thread_atual = pthread_create(&lista_threads[i], NULL, func_thread, (void*)(&lista_args[i * tamanho_arg]));
         if (status_thread_atual) {
             perror("pthread_create");
             fprintf(stderr, "Chamada pthread_create() falhou, impossivel criar um thread.\n");

@@ -15,6 +15,12 @@
 #define B_X 640
 #define B_Y 480
 
+#define THREAD_COUNT_HORZ 16
+#define THREAD_COUNT_VERT 12
+
+#define THREAD_CANVAS_WIDTH  B_X/THREAD_COUNT_HORZ
+#define THREAD_CANVAS_HEIGHT B_Y/THREAD_COUNT_VERT
+
 #define BY_PIXEL 1
 
 #define DRAW
@@ -25,11 +31,16 @@
 
 obj_camera camera;
 drawable_obj_llnode *drawables_root = NULL;
+vec3 viewfinder_corner;
 pixel_color bg_pixel = {0,0,0};
 
 GLFWwindow* window;
 
 GLubyte window_bitmap[B_Y][B_X][3] = {0x00};
+
+struct cartesian_t {
+    int x, y;
+};
 
 void trace_for_pixel(int x, int y);
 
@@ -37,28 +48,81 @@ void init(void)
 {  
     glClearColor (0.0, 0.0, 0.0, 0.0);
     glShadeModel(GL_FLAT);
-    // int x, y;
-    // for (x = 0; x < B_X/2; x++) {
-    //     for (y = 0; y < B_Y; y++) {
-    //         window_bitmap[y][x][0] = 0xff;
-    //         window_bitmap[y][x+B_X/2][2] = 0xff;
-    //     }
-    // }
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 }
 
 void display(void)
 {
-   glClear(GL_COLOR_BUFFER_BIT);
-   glRasterPos2i(-1, -1);
-   glDrawPixels(B_X, B_Y, GL_RGB,
-                GL_UNSIGNED_BYTE, window_bitmap);
-   glFlush();
+    while (1) {
+        glClear(GL_COLOR_BUFFER_BIT);
+        glRasterPos2i(-1, -1);
+        glDrawPixels(B_X, B_Y, GL_RGB,
+                        GL_UNSIGNED_BYTE, window_bitmap);
+        glFlush();
+    }
 }
 
 void *thread_loop(void* arg) {
     glutDisplayFunc(display);
     glutMainLoop();
+}
+
+void *artistThread(void *arg) {
+    cartesian_t bounds = *(cartesian_t *)arg;
+    intersect_resultset current_closest, current_candidate;
+    drawable_obj_llnode *drawables_list_aux = NULL;
+    drawable_obj *drawable_ptr = NULL;//, *draw_target = NULL;
+    intersects_llnode *intersections_root = NULL;
+    vec3 current_viewpoint;
+    vec3 viewfinder_size = { B_X/10, B_Y/10, 0 };
+//#ifdef DEBUG
+    int freed_intersect_nodes;
+//#endif
+    int x, y, vx, vy;
+    pixel_color current_pixel;
+    //printf("Thread (%d, %d) starting\n", bounds.x, bounds.y);
+    int upper_x = fmin(bounds.x + THREAD_CANVAS_WIDTH,  B_X);
+    int upper_y = fmin(bounds.y + THREAD_CANVAS_HEIGHT, B_Y);
+    for (x = bounds.x; x < upper_x; x++) {
+        for (y = bounds.y; y < upper_y; y++) {
+            vx = BY_PIXEL * (int)(x / BY_PIXEL);
+            vy = BY_PIXEL * (int)(y / BY_PIXEL);
+            //Calculate current viewpoint
+            current_viewpoint = vec3_add( viewfinder_corner, vec3_add( vec3_multi_r( camera.director_y, -1.0 * (double)vx * viewfinder_size.x / (double)B_X ),vec3_multi_r( camera.director_z, -1.0 * (double)vy * viewfinder_size.y / (double)B_Y ) ) );
+            current_closest = { {INF, INF, INF}, INF };
+            drawables_list_aux = drawables_root;
+            while (drawables_list_aux != NULL) {
+                drawable_ptr = drawables_list_aux->drawable;
+                switch (drawable_ptr->object_type) {
+                case sphere:
+                    chk_intersect_sphere   (&(camera.anchor), current_viewpoint, drawable_ptr, &intersections_root);
+                    break;
+                case plane:
+                    chk_intersect_plane    (&(camera.anchor), current_viewpoint, drawable_ptr, &intersections_root);
+                    break;
+                case line:
+                    chk_intersect_line     (&(camera.anchor), current_viewpoint, drawable_ptr, &intersections_root);
+                    break;
+                case triangle:
+                    chk_intersect_triangle (&(camera.anchor), current_viewpoint, drawable_ptr, &intersections_root);
+                    break;
+                default:
+                    printf("Something went wrong\n");
+                    break;
+                }
+                drawables_list_aux = drawables_list_aux -> next;
+            }
+            current_pixel = calculate_intersection_results(intersections_root, bg_pixel.r, bg_pixel.g, bg_pixel.b);
+            window_bitmap[B_Y-y][x][0] = current_pixel.r;
+            window_bitmap[B_Y-y][x][1] = current_pixel.g;
+            window_bitmap[B_Y-y][x][2] = current_pixel.b;
+            free_intersection_linkedlist(&intersections_root);
+        }
+    }
+    //printf("Thread (%d, %d) finished\n", bounds.x, bounds.y);
+    int *res =  (int *)malloc(sizeof(int));
+    *res = 0;
+    pthread_exit(res);
 }
 
 pthread_t windowThread;
@@ -73,75 +137,6 @@ int main(int argc, char *args[])
     glutInitWindowPosition(0, 0);
     glutCreateWindow("A E S T H E T I C");
     init();
-    // glutReshapeFunc(reshape);
-    // glutKeyboardFunc(keyboard);
-    
-    printf("Doing...\n");
-
-    // // Initialise GLFW
-    // glewExperimental = true; // Needed for core profile
-    // if( !glfwInit() )
-    // {
-    //     fprintf( stderr, "Failed to initialize GLFW\n" );
-    //     return -1;
-    // }
-
-    // // Create window
-    // glfwWindowHint(GLFW_SAMPLES, 4); // 4x antialiasing
-    // glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3); // We want OpenGL 3.3
-    // glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    // glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // To make MacOS happy; should not be needed
-    // glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // We don't want the old OpenGL 
-
-    // // Open a window and create its OpenGL context
-    // window = glfwCreateWindow( B_X, B_Y, "A E S T H E T I C", NULL, NULL);
-    // if( window == NULL ){
-    //     fprintf( stderr, "Failed to open GLFW window.\n" );
-    //     glfwTerminate();
-    //     return -1;
-    // }
-    // glfwMakeContextCurrent(window); // Initialize GLEW
-    // glfwSwapInterval(1);
-    // // glewExperimental=true; // Needed in core profile
-    // // if (glewInit() != GLEW_OK) {
-    // //     fprintf(stderr, "Failed to initialize GLEW\n");
-    // //     return -1;
-    // // }
-    // int width, height;
-    // glfwGetFramebufferSize(window, &width, &height);
-
-    // printf("Framebuffer: %d x %d\n", width, height);
-
-    
-
-    // glViewport(0, 0, width, height);
-	
-	// glMatrixMode(GL_PROJECTION);
-	// glLoadIdentity();
-	// // glOrtho(left, right, bottom, top, near, far);
-	// glMatrixMode(GL_MODELVIEW);
-	// glLoadIdentity();
-
-    // glClearColor(1.0, 1.0, 1.0, 0.0);
-    // glShadeModel(GL_FLAT);
-    // glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-
-    // while (!glfwWindowShouldClose(window)) {
-    //     glClear(GL_COLOR_BUFFER_BIT);
-    //     glRasterPos2i(0, 0);
-    //     glDrawBuffer(GL_FRONT);
-    //     glDrawPixels(
-    //         B_X, 
-    //         B_Y, 
-    //         GL_RGB,
-    //         GL_UNSIGNED_BYTE,
-    //         window_bitmap
-    //     );
-    //     glFlush();
-    // }
-
-    // printf("Done!\n");
-    // scanf("%d", &x);
 
     // ============================= Start of raycasting =============================
     //Settings
@@ -164,7 +159,7 @@ int main(int argc, char *args[])
     //Drawable object linked list
     intersects_llnode *intersections_root = NULL;
 
-    int objs = load_shapes_from_file("scenes/drawables_list.txt", &drawables_root);
+    int objs = load_shapes_from_file("scenes/vaporwave.txt", &drawables_root);
     printf("Loaded %d objects\n", objs);
 
     //add_triangle(&drawables_root, (vec3){0,-20,0}, (vec3){0,20,0}, (vec3){0,0,50}, 255, 204, 255,1);
@@ -198,98 +193,33 @@ int main(int argc, char *args[])
     vec3 viewfinder_helper_y = vec3_multi_r( camera.director_z, .5 * (double)viewfinder_size.y );
     vec3 viewfinder_corner_fromorigin = vec3_add( viewfinder_midpointer, vec3_add( viewfinder_helper_x, viewfinder_helper_y ) );
 
-    vec3 viewfinder_corner = vec3_add( camera.anchor, viewfinder_corner_fromorigin );
+    viewfinder_corner = vec3_add( camera.anchor, viewfinder_corner_fromorigin );
     printf("Viewfinder corner: (%.2f, %.2f, %.2f) - len = %.2f\n", viewfinder_corner.x, viewfinder_corner.y, viewfinder_corner.z, vec3_len( viewfinder_corner ));
     vec3 debug_corner = vec3_add( viewfinder_corner, vec3_add( vec3_multi_r( camera.director_y, -1.0 * (double)B_X * viewfinder_size.x / (double)B_X ),vec3_multi_r( camera.director_z, -1.0 * (double)B_Y * viewfinder_size.y / (double)B_Y ) ) );
     printf("Viewfinder max corner: (%.2f, %.2f, %.2f) - len = %.2f\n", debug_corner.x, debug_corner.y, debug_corner.z, vec3_len( debug_corner ));
 
     //add_sphere(&drawables_root, (vec3){10,10,10}, 0.5, 0,0,255, 1);
 
-    //FILE *fd = fopen("out_res.txt", "w");
-    intersect_resultset current_closest, current_candidate;
-    drawable_obj_llnode *drawables_list_aux = NULL;
-    drawable_obj *drawable_ptr = NULL;//, *draw_target = NULL;
-    vec3 current_viewpoint;
-//#ifdef DEBUG
-    int freed_intersect_nodes;
-//#endif
-    int x, y, vx, vy;
-    pixel_color current_pixel;
-#ifdef USE_THREADS
-    thread pixel_threads[B_Y][B_X];
-#endif // USE_THREADS
-
-    for (x = 0; x < B_X; x++) {
-        for (y = 0; y < B_Y; y++) {
-#ifdef USE_THREADS
-            thread_args[x*B_Y + y] = {x, y};
-            pixel_threads[y][x](trace_for_pixel, x, y);
-#else
-            //printf("%3.3f%%", 100.0 * (x * (double)B_Y + y)/((double)B_X*B_Y));
-            vx = BY_PIXEL * (int)(x / BY_PIXEL);
-            vy = BY_PIXEL * (int)(y / BY_PIXEL);
-            //printf("(%3d,%3d)", x, y);
-            //Calculate current viewpoint
-            //current_viewpoint = vec3_add(viewfinder_origin, vec3_add(vec3_multi_r(viewfinder_step_x, (double)x), vec3_multi_r(viewfinder_step_y, (double)y)));
-            current_viewpoint = vec3_add( viewfinder_corner, vec3_add( vec3_multi_r( camera.director_y, -1.0 * (double)vx * viewfinder_size.x / (double)B_X ),vec3_multi_r( camera.director_z, -1.0 * (double)vy * viewfinder_size.y / (double)B_Y ) ) );
-            current_closest = { {INF, INF, INF}, INF };
-            drawables_list_aux = drawables_root;
-            while (drawables_list_aux != NULL) {
-                drawable_ptr = drawables_list_aux->drawable;
-                switch (drawable_ptr->object_type) {
-                case sphere:
-                    //current_candidate =
-                    chk_intersect_sphere   (&(camera.anchor), current_viewpoint, drawable_ptr, &intersections_root);
-                    break;
-                case plane:
-                    chk_intersect_plane    (&(camera.anchor), current_viewpoint, drawable_ptr, &intersections_root);
-                    break;
-                case line:
-                    chk_intersect_line     (&(camera.anchor), current_viewpoint, drawable_ptr, &intersections_root);
-                    break;
-                case triangle:
-                    chk_intersect_triangle (&(camera.anchor), current_viewpoint, drawable_ptr, &intersections_root);
-                    break;
-                default:
-                    printf("Something went wrong\n");
-                    break;
-                }
-                drawables_list_aux = drawables_list_aux -> next;
+    cartesian_t threadArgs[THREAD_COUNT_HORZ * THREAD_COUNT_VERT];
+    pthread_t artistThreads[THREAD_COUNT_HORZ * THREAD_COUNT_VERT];
+    printf("Done calculating, spawning threads...\n");
+    int x, y, threadStatus;
+    for (x = 0; x < THREAD_COUNT_HORZ; x++) {
+        for (y = 0; y < THREAD_COUNT_VERT; y++) {
+            //printf("Creating %d,%d (%d)\n", x, y, x * THREAD_COUNT_HORZ + y);
+            threadArgs[x * THREAD_COUNT_HORZ + y] = { x * THREAD_CANVAS_WIDTH, y * THREAD_CANVAS_HEIGHT };
+            threadStatus = pthread_create(&artistThreads[x * THREAD_COUNT_HORZ + y], NULL, artistThread, (void*)&threadArgs[x * THREAD_COUNT_HORZ + y]);
+            if (threadStatus != 0) {
+                printf("pthread_create exited with status %d\n", threadStatus);
+                exit(threadStatus);
             }
-            //add_intersection_tolist(&intersections_root, &bg_helper,  { (vec3){INF, INF, INF}, INF });
-            //print_intersection_ll(intersections_root, fd);
-            current_pixel = calculate_intersection_results(intersections_root, bg_pixel.r, bg_pixel.g, bg_pixel.b);
-            //fprintf(fd, "Hey\n");
-            //printf("(%3d,%3d,%3d)\n", current_pixel.r, current_pixel.g, current_pixel.b);
-            //printf("\n");
-
-            //if (current_pixel.r != bg_pixel.r) { printf("Found differently colored pixel!\n"); }
-
-            window_bitmap[B_Y-y][x][0] = current_pixel.r;
-            window_bitmap[B_Y-y][x][1] = current_pixel.g;
-            window_bitmap[B_Y-y][x][2] = current_pixel.b;
-            // SDL_SetRenderDrawColor(renderer, current_pixel.r, current_pixel.g, current_pixel.b, 255);
-            // SDL_RenderDrawPoint(renderer, x, y);
-
-            //SDL_RenderPresent(renderer);
-
-            free_intersection_linkedlist(&intersections_root);
-            //printf("\b\b\b\b\b\b\b\b");
-#endif
         }
     }
-    printf("Done!\n");
+    printf("Done spawning threads\n");
+
     pthread_create(&windowThread, NULL, thread_loop, (void*)NULL);
 
     scanf("%d", &x);
-
-#ifdef USE_THREADS
-    for (x = 0; x < B_X; x++) {
-        for (y = 0; y < B_Y; y++) {
-            pixel_threads[y][x].join();
-        }
-    }
-#endif // USE_THREADS
 
     // SDL_RenderPresent(renderer);
     printf("Done!\n");
@@ -315,42 +245,3 @@ int main(int argc, char *args[])
     //cin.ignore();
     return 0;
 }
-
-#ifdef USE_THREADS
-void trace_for_pixel(struct xy_t *myarg) {
-    int vx = BY_PIXEL * (int)(myarg->x / BY_PIXEL);
-    int vy = BY_PIXEL * (int)(myarg->y / BY_PIXEL);
-
-    vec3 current_viewpoint = vec3_add( viewfinder_corner, vec3_add( vec3_multi_r( camera.director_y, -1.0 * (double)vx * viewfinder_size.x / (double)B_X ),vec3_multi_r( camera.director_z, -1.0 * (double)vy * viewfinder_size.y / (double)B_Y ) ) );
-    drawable_obj_llnode *drawables_list_aux = drawables_root;
-    drawable_obj *drawable_ptr;
-
-    while (drawables_list_aux != NULL) {
-        drawable_ptr = drawables_list_aux->drawable;
-        switch (drawable_ptr->object_type) {
-        case sphere:
-            chk_intersect_sphere   (&(camera.anchor), current_viewpoint, drawable_ptr, &intersections_root);
-            break;
-        case plane:
-            chk_intersect_plane    (&(camera.anchor), current_viewpoint, drawable_ptr, &intersections_root);
-            break;
-        case line:
-            chk_intersect_line     (&(camera.anchor), current_viewpoint, drawable_ptr, &intersections_root);
-            break;
-        case triangle:
-            chk_intersect_triangle (&(camera.anchor), current_viewpoint, drawable_ptr, &intersections_root);
-            break;
-        default:
-            printf("Something went wrong\n");
-            break;
-        }
-        drawables_list_aux = drawables_list_aux -> next;
-    }
-    current_pixel = calculate_intersection_results(intersections_root, bg_pixel.r, bg_pixel.g, bg_pixel.b);
-
-    // SDL_SetRenderDrawColor(renderer, current_pixel.r, current_pixel.g, current_pixel.b, 255);
-    // SDL_RenderDrawPoint(renderer, x, y);
-
-    free_intersection_linkedlist(&intersections_root);
-}
-#endif

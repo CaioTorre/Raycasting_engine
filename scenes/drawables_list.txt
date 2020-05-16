@@ -1,1 +1,1 @@
-4 255 255 0 1.0 objects/utah-teapot.obj
+4 79 255 170 0.7 models/utah-teapot.obj

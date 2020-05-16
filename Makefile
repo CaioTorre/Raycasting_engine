@@ -21,7 +21,7 @@ $(ODIR)/%.o: $(SDIR)/%.cpp $(DEPS)
 	$(CP) -c -o $@ $< $(CFLAGS)
 
 $(ODIR)/%.o: $(SDIR)/%.c $(DEPS)
-	$(CC) -c -o $@ $< $(CFLAGS)
+	$(CP) -c -o $@ $< $(CFLAGS)
 
 main: $(OBJ)
 	$(CP) -o $(RESULT) $(SDIR)/main.cpp $^ $(CFLAGS) $(LIBS)

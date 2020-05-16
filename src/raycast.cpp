@@ -17,7 +17,7 @@ void add_drawable_tolist(drawable_obj_llnode **root, drawable_obj *drw_obj) {
     }
 }
 
-void add_sphere(drawable_obj_llnode **root, vec3 center, double radius, uint8_t r, uint8_t g, uint8_t b, double alpha) {
+void add_sphere(drawable_obj_llnode **root, vec3 center, double radius, uint8_t r, uint8_t g, uint8_t b, double alpha, uint8_t real) {
 //void add_sphere(drawable_obj_llnode **root, vec3 center, double radius, pixel_color_rgba rgba) {
     // Create sphere in memory
     obj_sphere *sphere = (obj_sphere*)malloc(sizeof(obj_sphere));
@@ -28,11 +28,11 @@ void add_sphere(drawable_obj_llnode **root, vec3 center, double radius, uint8_t 
     // Create drawable abstraction
     drawable_obj *drw_sphere = (drawable_obj*)malloc(sizeof(drawable_obj));
     // Fill details about drawable
-    (*drw_sphere) = { sphere, known_drawable_objs::sphere, (pixel_color){r,g,b}, alpha };
+    (*drw_sphere) = { sphere, known_drawable_objs::sphere, real, (pixel_color){r,g,b}, alpha };
     add_drawable_tolist(root, drw_sphere);
 }
 
-void add_plane_3_points(drawable_obj_llnode **root, vec3 point1, vec3 point2, vec3 point3, uint8_t r, uint8_t g, uint8_t b, double alpha) {
+void add_plane_3_points(drawable_obj_llnode **root, vec3 point1, vec3 point2, vec3 point3, uint8_t r, uint8_t g, uint8_t b, double alpha, uint8_t real) {
 //void add_plane_3_points(drawable_obj_llnode **root, vec3 point1, vec3 point2, vec3 point3, pixel_color_rgba rgba) {
     // Create plane in memory
     obj_plane *plane = (obj_plane*)malloc(sizeof(obj_plane));
@@ -42,11 +42,11 @@ void add_plane_3_points(drawable_obj_llnode **root, vec3 point1, vec3 point2, ve
     // Create drawable abstraction
     drawable_obj *drw_plane = (drawable_obj*)malloc(sizeof(drawable_obj));
     // Fill details about drawable
-    (*drw_plane) = { plane, known_drawable_objs::plane, (pixel_color){r,g,b}, alpha };
+    (*drw_plane) = { plane, known_drawable_objs::plane, real, (pixel_color){r,g,b}, alpha };
     add_drawable_tolist(root, drw_plane);
 }
 
-void add_line_2_points(drawable_obj_llnode **root, vec3 point1, vec3 point2, double radius, uint8_t r, uint8_t g, uint8_t b, double alpha) {
+void add_line_2_points(drawable_obj_llnode **root, vec3 point1, vec3 point2, double radius, uint8_t r, uint8_t g, uint8_t b, double alpha, uint8_t real) {
 //void add_line_2_points(drawable_obj_llnode **root, vec3 point1, vec3 point2, double radius, pixel_color_rgba rgba) {
     // Create line in memory
     obj_line *line = (obj_line*)malloc(sizeof(obj_line));
@@ -58,11 +58,11 @@ void add_line_2_points(drawable_obj_llnode **root, vec3 point1, vec3 point2, dou
     // Create drawable abstraction
     drawable_obj *drw_line = (drawable_obj*)malloc(sizeof(drawable_obj));
     // Fill details about drawable
-    (*drw_line) = { line, known_drawable_objs::line, (pixel_color){r,g,b}, alpha };
+    (*drw_line) = { line, known_drawable_objs::line, real, (pixel_color){r,g,b}, alpha };
     add_drawable_tolist(root, drw_line);
 }
 
-void add_triangle(drawable_obj_llnode **root, vec3 point1, vec3 point2, vec3 point3, uint8_t r, uint8_t g, uint8_t b, double alpha) {
+void add_triangle(drawable_obj_llnode **root, vec3 point1, vec3 point2, vec3 point3, uint8_t r, uint8_t g, uint8_t b, double alpha, uint8_t real) {
 //void add_plane_3_points(drawable_obj_llnode **root, vec3 point1, vec3 point2, vec3 point3, pixel_color_rgba rgba) {
     // Create triangle in memory
     obj_triangle *triangle = (obj_triangle*)malloc(sizeof(obj_triangle));
@@ -73,7 +73,7 @@ void add_triangle(drawable_obj_llnode **root, vec3 point1, vec3 point2, vec3 poi
     // Create drawable abstraction
     drawable_obj *drw_triangle = (drawable_obj*)malloc(sizeof(drawable_obj));
     // Fill details about drawable
-    (*drw_triangle) = { triangle, known_drawable_objs::triangle, (pixel_color){r,g,b}, alpha };
+    (*drw_triangle) = { triangle, known_drawable_objs::triangle, real, (pixel_color){r,g,b}, alpha };
     add_drawable_tolist(root, drw_triangle);
 }
 
@@ -94,32 +94,33 @@ int load_shapes_from_file(const char *file_location, drawable_obj_llnode **root)
     int model_v1, model_v2, model_v3, model_iterator;
     int helper;
     vec3 min_bounding, max_bounding;
+    int realAux;
     while (!feof(fd)) {
         //if (temp != (char) 1) ungetc(temp, fd);
-        fscanf(fd, "%d %d %d %d %lf ", (int*)&current_obj_type, &r, &g, &b, &a);
+        fscanf(fd, "%d %d %d %d %lf %d ", (int*)&current_obj_type, &r, &g, &b, &a, &realAux);
         //fscanf(fd, "");
         switch (current_obj_type) {
         case sphere:
             fscanf(fd, "%lf %lf %lf %lf ", &(point1.x), &(point1.y), &(point1.z), &radius);
-            add_sphere(root, point1, radius, (uint8_t)r, (uint8_t)g, (uint8_t)b, a);
+            add_sphere(root, point1, radius, (uint8_t)r, (uint8_t)g, (uint8_t)b, a, (uint8_t)realAux);
             //printf("Read sphere: (%.2f %.2f %.2f) - %.2f - %d %d %d %.2f\n", point1.x, point1.y, point1.z, radius, r, g, b, a);
             read_objs++;
             break;
         case plane:
             fscanf(fd, "%lf %lf %lf %lf %lf %lf %lf %lf %lf ", &point1.x, &point1.y, &point1.z, &point2.x, &point2.y, &point2.z, &point3.x, &point3.y, &point3.z);
-            add_plane_3_points(root, point1, point2, point3, (uint8_t)r, (uint8_t)g, (uint8_t)b, a);
+            add_plane_3_points(root, point1, point2, point3, (uint8_t)r, (uint8_t)g, (uint8_t)b, a, (uint8_t)realAux);
             printf("Read plane\n");
             read_objs++;
             break;
         case line:
             fscanf(fd, "%lf %lf %lf %lf %lf %lf %lf ", &point1.x, &point1.y, &point1.z, &point2.x, &point2.y, &point2.z, &radius);
-            add_line_2_points(root, point1, point2, radius, (uint8_t)r, (uint8_t)g, (uint8_t)b, a);
+            add_line_2_points(root, point1, point2, radius, (uint8_t)r, (uint8_t)g, (uint8_t)b, a, (uint8_t)realAux);
             //printf("Read line\n");
             read_objs++;
             break;
         case triangle:
             fscanf(fd, "%lf %lf %lf %lf %lf %lf %lf %lf %lf ", &point1.x, &point1.y, &point1.z, &point2.x, &point2.y, &point2.z, &point3.x, &point3.y, &point3.z);
-            add_triangle(root, point1, point2, point3, (uint8_t)r, (uint8_t)g, (uint8_t)b, a);
+            add_triangle(root, point1, point2, point3, (uint8_t)r, (uint8_t)g, (uint8_t)b, a, (uint8_t)realAux);
             printf("Read triangle\n");
             read_objs++;
             break;
@@ -169,7 +170,7 @@ int load_shapes_from_file(const char *file_location, drawable_obj_llnode **root)
                     model_fetch = model_root;
                     for (model_iterator = 1; model_iterator < model_v3; model_iterator++) model_fetch = model_fetch->next;
                     point3 = model_fetch->vert;
-                    add_triangle(root, point1, point2, point3, (uint8_t)r, (uint8_t)g, (uint8_t)b, a);
+                    add_triangle(root, point1, point2, point3, (uint8_t)r, (uint8_t)g, (uint8_t)b, a, (uint8_t)realAux);
                     read_objs++;
                     break;
                 default: //Pass (probably a comment or something)
@@ -219,7 +220,8 @@ intersect_resultset chk_intersect_sphere(vec3 *camera, vec3 viewpoint, drawable_
     if (delta == 0) { // Single collision, easier to check (tangent)
         double u = (-1 * b + sqrt(delta))/(2 * a);
         vec3 c = {camera->x + u*vx_m_cx, camera->y + u*vy_m_cy, camera->z + u*vz_m_cz};
-        temp1 = (intersect_resultset){ c, vec3_len(vec3_sub(*camera, c)) };
+        double angle1 = acos( vec3_dot_product( vec3_sub(this_sphere->center, c), vec3_sub(*camera, c) ) / (vec3_len(vec3_sub(this_sphere->center, c)) * vec3_len(vec3_sub(*camera, c))));
+        temp1 = (intersect_resultset){ c, vec3_len(vec3_sub(*camera, c)), abs(angle1) }; // TODO find angle of intersect
         add_intersection_tolist(intersections_root, this_sphere_obj, temp1);
         return temp1;
     }
@@ -228,8 +230,19 @@ intersect_resultset chk_intersect_sphere(vec3 *camera, vec3 viewpoint, drawable_
     double u2 = (-1 * b - sqrt(delta))/(2 * a);
     vec3 c1 = {camera->x + u1*vx_m_cx, camera->y + u1*vy_m_cy, camera->z + u1*vz_m_cz}; // Get both points
     vec3 c2 = {camera->x + u2*vx_m_cx, camera->y + u2*vy_m_cy, camera->z + u2*vz_m_cz};
-    temp1 = (intersect_resultset){ c1, vec3_dist( *camera, c1 ) };
-    temp2 = (intersect_resultset){ c2, vec3_dist( *camera, c2 ) };
+    double angle1;
+    double angle2;
+    if (this_sphere_obj->real) {
+        angle1 = acos( vec3_dot_product( vec3_sub(this_sphere->center, c1), vec3_sub(*camera, c1) ) / (vec3_len(vec3_sub(this_sphere->center, c1)) * vec3_len(vec3_sub(*camera, c1))));
+        angle2 = acos( vec3_dot_product( vec3_sub(this_sphere->center, c2), vec3_sub(*camera, c2) ) / (vec3_len(vec3_sub(this_sphere->center, c2)) * vec3_len(vec3_sub(*camera, c2))));
+        if (angle1 > PI / 2.0) angle1 = PI - angle1;
+        if (angle2 > PI / 2.0) angle2 = PI - angle2;
+    } else {
+        angle1 = 0.0;
+        angle2 = 0.0;
+    }
+    temp1 = (intersect_resultset){ c1, vec3_dist( *camera, c1 ), abs(angle1) }; // TODO find angle of intersect
+    temp2 = (intersect_resultset){ c2, vec3_dist( *camera, c2 ), abs(angle2) }; // TODO find angle of intersect
     add_intersection_tolist(intersections_root, this_sphere_obj, temp1);
     add_intersection_tolist(intersections_root, this_sphere_obj, temp2);
     if ( vec3_dist( *camera, c1 ) < vec3_dist( *camera, c2 ) ) return temp1;
@@ -246,8 +259,8 @@ intersect_resultset chk_intersect_plane (vec3 *camera, vec3 viewpoint, drawable_
     //if ((s > 0 && s <= 1)) { // Then add to intersection list
     if (s > 0) {
         vec3 inters = vec3_add( *camera, vec3_multi_r( u, s ) );
-        //intersect_resultset temp = { inters, vec3_len( vec3_sub( *camera, inters ) ) };
-        intersect_resultset temp = { inters, vec3_dist( *camera, inters ) };
+        double angle = acos( d / (vec3_len(this_plane->normal) * vec3_len(u)));
+        intersect_resultset temp = { inters, vec3_dist( *camera, inters ), angle };
         add_intersection_tolist( intersections_root, this_plane_obj, temp );
         return temp;
     }
@@ -274,7 +287,7 @@ intersect_resultset chk_intersect_line  (vec3 *camera, vec3 viewpoint, drawable_
         if (dotp > 0) {
         //double theta = acos(dotp/(vec3_len(cam_inters) * vec3_len(ray_director)));
         //if (abs(theta) < PI / 2.0) {
-            intersect_resultset temp = { c1, c_dist };
+            intersect_resultset temp = { c1, c_dist, 0.0 }; // TODO find angle of intersect
             add_intersection_tolist( intersections_root, this_line_obj, temp );
             return temp;
         }
@@ -304,8 +317,8 @@ intersect_resultset chk_intersect_triangle (vec3 *camera, vec3 viewpoint, drawab
         double theta13 = acos( vec3_dot_product(v1, v3) / (l1 * l3));
         double theta23 = acos( vec3_dot_product(v2, v3) / (l2 * l3));
         if ( abs(theta12 + theta13 + theta23 - (2.0 * PI)) <= TRIANGLE_ANGLE_THRESHOLD ) {
-        //intersect_resultset temp = { inters, vec3_len( vec3_sub( *camera, inters ) ) };
-            intersect_resultset temp = { inters, vec3_dist( *camera, inters ) };
+            double angle = acos( d / (vec3_len(triangle_normal) * vec3_len(raycast_director)));
+            intersect_resultset temp = { inters, vec3_dist( *camera, inters ), angle };
             add_intersection_tolist( intersections_root, this_triangle_obj, temp );
             return temp;
         } // Else it misses (outside of triangle)
@@ -400,9 +413,9 @@ pixel_color calculate_intersection_results(intersects_llnode *root, uint8_t bgr,
     pixel_color this_color = root->associated_object->texture_color;
     pixel_color result;
     double current_alpha = root->associated_object->texture_alpha;
-    result.r = ( (double)this_color.r * current_alpha ) + ( (double)combination.r * ( 1.0 - current_alpha ) );
-    result.g = ( (double)this_color.g * current_alpha ) + ( (double)combination.g * ( 1.0 - current_alpha ) );
-    result.b = ( (double)this_color.b * current_alpha ) + ( (double)combination.b * ( 1.0 - current_alpha ) );
+    result.r = ( (double)this_color.r * current_alpha ) * ((PI / 2.0) - root->intersection.angle) / (PI / 2.0)+ ( (double)combination.r * ( 1.0 - current_alpha ) );
+    result.g = ( (double)this_color.g * current_alpha ) * ((PI / 2.0) - root->intersection.angle) / (PI / 2.0) + ( (double)combination.g * ( 1.0 - current_alpha ) );
+    result.b = ( (double)this_color.b * current_alpha ) * ((PI / 2.0) - root->intersection.angle) / (PI / 2.0) + ( (double)combination.b * ( 1.0 - current_alpha ) );
     //printf("(%3d,%3d,%3d)", result.r, result.g, result.b);
     return result;
 }

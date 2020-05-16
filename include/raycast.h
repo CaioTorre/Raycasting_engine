@@ -16,7 +16,7 @@
 #define DEFAULT_LINE_WIDTH 0.2
 #define TRIANGLE_ANGLE_THRESHOLD 0.01
 #define LINE_RADIUS_THRESHOLD 0.01
-#define MAX_FACES_PERMODEL 5000
+#define MAX_FACES_PERMODEL 10000
 
 typedef double angle;
 
@@ -45,6 +45,7 @@ typedef struct pixel_color_rgba_t pixel_color_rgba;
 struct intersect_resultset_t {
     vec3 intersect_point;
     double distance;
+    double angle;
 };
 typedef struct intersect_resultset_t intersect_resultset;
 
@@ -75,6 +76,7 @@ enum known_drawable_objs { sphere, plane, line, triangle, model };
 struct drawable_obj_t {
     void *object;
     enum known_drawable_objs object_type;
+    uint8_t real;
     pixel_color texture_color;
     double texture_alpha;
 };
@@ -122,12 +124,12 @@ int load_shapes_from_file(const char *file_location, drawable_obj_llnode **root)
 //Add basic shapes
 void add_drawable_tolist(drawable_obj_llnode **root, drawable_obj *drw_obj);
 //void add_sphere(drawable_obj_llnode **root, vec3 center, double radius, pixel_color_rgba rgba;
-void add_sphere(drawable_obj_llnode **root, vec3 center, double radius, uint8_t r, uint8_t g, uint8_t b, double alpha);
+void add_sphere(drawable_obj_llnode **root, vec3 center, double radius, uint8_t r, uint8_t g, uint8_t b, double alpha, uint8_t real);
 //void add_plane_3_points(drawable_obj_llnode **root, vec3 point1, vec3 point2, vec3 point3, pixel_color_rgba rgba);
-void add_plane_3_points(drawable_obj_llnode **root, vec3 point1, vec3 point2, vec3 point3, uint8_t r, uint8_t g, uint8_t b, double alpha);
+void add_plane_3_points(drawable_obj_llnode **root, vec3 point1, vec3 point2, vec3 point3, uint8_t r, uint8_t g, uint8_t b, double alpha, uint8_t real);
 //void add_line_2_points(drawable_obj_llnode **root, vec3 point1, vec3 point2, double radius, pixel_color_rgba rgba);
-void add_line_2_points(drawable_obj_llnode **root, vec3 point1, vec3 point2, double radius, uint8_t r, uint8_t g, uint8_t b, double alpha);
-void add_triangle(drawable_obj_llnode **root, vec3 point1, vec3 point2, vec3 point3, uint8_t r, uint8_t g, uint8_t b, double alpha);
+void add_line_2_points(drawable_obj_llnode **root, vec3 point1, vec3 point2, double radius, uint8_t r, uint8_t g, uint8_t b, double alpha, uint8_t real);
+void add_triangle(drawable_obj_llnode **root, vec3 point1, vec3 point2, vec3 point3, uint8_t r, uint8_t g, uint8_t b, double alpha, uint8_t real);
 
 //Check intersections for each shape
 intersect_resultset chk_intersect_sphere   (vec3 *camera, vec3 viewpoint, drawable_obj *this_sphere_obj, intersects_llnode **intersections_root);

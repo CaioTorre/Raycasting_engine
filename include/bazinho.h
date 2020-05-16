@@ -56,8 +56,8 @@ int opera_semaforo_nowait_id(int sem_id, int valor);
 int opera_semaforo_nowait(key_t chave, int valor);
 
 //===================================== THREAD =====================================
-pthread_t *cria_n_threads_args(int n_threads, void(*func_thread)(void *), void*(*cria_args)(int), size_t tamanho_arg);
-pthread_t *cria_n_threads_arglist(int n_threads, void(*func_thread)(void *), void* args, size_t tamanho_arg);
+pthread_t *cria_n_threads_args(int n_threads, void*(*func_thread)(void *), void*(*cria_args)(int), size_t tamanho_arg);
+pthread_t *cria_n_threads_arglist(int n_threads, void*(*func_thread)(void *), void* args, size_t tamanho_arg);
 void espera_n_threads(int n_threads, pthread_t *threads);
 void mata_n_threads(int n_threads, pthread_t *threads);
 pthread_mutex_t *cria_n_mutex(int n_mutex);
